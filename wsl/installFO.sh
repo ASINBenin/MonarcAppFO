@@ -32,18 +32,18 @@ STATS_DB_USER='statsserviceuser'
 STATS_DB_PASSWORD="password"
 STATS_SECRET_KEY="$(openssl rand -hex 32)"
 
-echo -e "\n--- Installing now… ---\n"
+echo -e "\n--- Installing nowÃ¢â‚¬Â¦ ---\n"
 sudo chmod 755 $HOME
 sudo apt-get update > /dev/null 2>&1
 
-echo -e "\n--- Updating packages list… ---\n"
+echo -e "\n--- Updating packages listÃ¢â‚¬Â¦ ---\n"
 sudo apt-get upgrade -y > /dev/null 2>&1
 
-echo -e "\n--- Install base packages… ---\n"
+echo -e "\n--- Install base packagesÃ¢â‚¬Â¦ ---\n"
 sudo apt-get -y install vim zip unzip git gettext curl gsfonts > /dev/null
 
 
-echo -e "\n--- Install MariaDB specific packages and settings… ---\n"
+echo -e "\n--- Install MariaDB specific packages and settingsÃ¢â‚¬Â¦ ---\n"
 sudo apt-get -y install mariadb-server mariadb-client > /dev/null
 # Secure the MariaDB installation (especially by setting a strong root password)
 sudo service mariadb restart > /dev/null
@@ -59,20 +59,20 @@ y
 y
 EOF
 
-echo -e "\n--- Configuring MariaDB… ---\n"
+echo -e "\n--- Configuring MariaDBÃ¢â‚¬Â¦ ---\n"
 sudo sed -i "s/skip-external-locking/#skip-external-locking/g" $MARIA_DB_CFG
 sudo sed -i "s/.*bind-address.*/bind-address = 0.0.0.0/" $MARIA_DB_CFG
 
-echo -e "\n--- Setting up our MariaDB user for MONARC… ---\n"
+echo -e "\n--- Setting up our MariaDB user for MONARCÃ¢â‚¬Â¦ ---\n"
 sudo mysql -u root -p$DBPASSWORD_ADMIN -e "CREATE USER '$DBUSER_MONARC'@'%' IDENTIFIED BY '$DBPASSWORD_MONARC';"
 sudo mysql -u root -p$DBPASSWORD_ADMIN -e "GRANT ALL PRIVILEGES ON * . * TO '$DBUSER_MONARC'@'%';"
 sudo mysql -u root -p$DBPASSWORD_ADMIN -e "FLUSH PRIVILEGES;"
 sudo service mariadb restart > /dev/null
 
-echo -e "\n--- Installing PHP-specific packages… ---\n"
+echo -e "\n--- Installing PHP-specific packagesÃ¢â‚¬Â¦ ---\n"
 sudo apt-get -y install php apache2 libapache2-mod-php php-curl php-gd php-mysql php-pear php-apcu php-xml php-mbstring php-intl php-zip php-xdebug php-bcmath > /dev/null 2>&1
 
-echo -e "\n--- Configuring PHP… ---\n"
+echo -e "\n--- Configuring PHPÃ¢â‚¬Â¦ ---\n"
 for key in upload_max_filesize post_max_size max_execution_time max_input_time memory_limit
 do
  sudo sed -i "s/^\($key\).*/\1 = $(eval echo \${$key})/" $PHP_INI
@@ -86,7 +86,7 @@ xdebug.remote_connect_back=1
 xdebug.idekey=IDEKEY
 EOF"
 
-echo -e "\n--- Enabling mod-rewrite and ssl… ---\n"
+echo -e "\n--- Enabling mod-rewrite and sslÃ¢â‚¬Â¦ ---\n"
 sudo a2enmod rewrite > /dev/null 2>&1
 sudo a2enmod ssl > /dev/null 2>&1
 sudo a2enmod headers > /dev/null 2>&1
@@ -94,7 +94,7 @@ sudo a2enmod headers > /dev/null 2>&1
 echo -e "\n--- Allowing Apache override to all ---\n"
 sudo sed -i "s/AllowOverride None/AllowOverride All/g" /etc/apache2/apache2.conf
 
-echo -e "\n--- Installing composer… ---\n"
+echo -e "\n--- Installing composerÃ¢â‚¬Â¦ ---\n"
 curl -sS https://getcomposer.org/installer | sudo php -- --install-dir=/usr/local/bin --filename=composer > /dev/null 2>&1
 if [ $? -ne 0 ]; then
     echo "\nERROR: unable to install composer\n"
@@ -102,12 +102,12 @@ if [ $? -ne 0 ]; then
 fi
 
 
-echo -e "\n--- Installing MONARC… ---\n"
+echo -e "\n--- Installing MONARCÃ¢â‚¬Â¦ ---\n"
 git clone --config core.fileMode=false https://github.com/monarc-project/MonarcAppFO $PATH_TO_MONARC > /dev/null 2>&1
 
 cd $PATH_TO_MONARC
 
-echo -e "\n--- Installing the dependencies… ---\n"
+echo -e "\n--- Installing the dependenciesÃ¢â‚¬Â¦ ---\n"
 composer ins > /dev/null 2>&1
 
 
@@ -164,17 +164,17 @@ sudo bash -c "cat << EOF > /etc/apache2/sites-enabled/000-default.conf
     SetEnv APP_DIR $PATH_TO_MONARC
 </VirtualHost>
 EOF"
-echo -e "\n--- Restarting Apache… ---\n"
+echo -e "\n--- Restarting ApacheÃ¢â‚¬Â¦ ---\n"
 sudo service apache2 restart > /dev/null
 
 
-echo -e "\n--- Installation of Node, NPM and Grunt… ---\n"
+echo -e "\n--- Installation of Node, NPM and GruntÃ¢â‚¬Â¦ ---\n"
 curl -sL https://deb.nodesource.com/setup_15.x | sudo bash - > /dev/null 2>&1
 sudo apt-get install -y nodejs npm > /dev/null 2>&1
 sudo npm install -g grunt-cli > /dev/null 2>&1
 
 
-echo -e "\n--- Installing the stats service… ---\n"
+echo -e "\n--- Installing the stats serviceÃ¢â‚¬Â¦ ---\n"
 sudo apt-get -y install postgresql python3-pip python3-venv > /dev/null 2>&1
 sudo update-alternatives --install /usr/bin/python python /usr/bin/python2 10 > /dev/null 2>&1
 sudo update-alternatives --install /usr/bin/python python /usr/bin/python3 20 > /dev/null 2>&1
@@ -275,15 +275,15 @@ return [
 EOF
 
 
-echo -e "\n--- Creation of the data bases… ---\n"
+echo -e "\n--- Creation of the data basesÃ¢â‚¬Â¦ ---\n"
 mysql -u $DBUSER_MONARC -p$DBPASSWORD_MONARC -e "CREATE DATABASE monarc_cli DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci;" > /dev/null
 mysql -u $DBUSER_MONARC -p$DBPASSWORD_MONARC -e "CREATE DATABASE monarc_common DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci;" > /dev/null
-echo -e "\n--- Populating MONARC DB… ---\n"
+echo -e "\n--- Populating MONARC DBÃ¢â‚¬Â¦ ---\n"
 mysql -u $DBUSER_MONARC -p$DBPASSWORD_MONARC monarc_common < db-bootstrap/monarc_structure.sql > /dev/null
 mysql -u $DBUSER_MONARC -p$DBPASSWORD_MONARC monarc_common < db-bootstrap/monarc_data.sql > /dev/null
 
 
-echo -e "\n--- Creating cache folders for backend… ---\n"
+echo -e "\n--- Creating cache folders for backendÃ¢â‚¬Â¦ ---\n"
 mkdir -p $PATH_TO_MONARC/data/cache
 mkdir -p $PATH_TO_MONARC/data/LazyServices/Proxy
 mkdir -p $PATH_TO_MONARC/data/DoctrineORMModule/Proxy
@@ -292,7 +292,7 @@ chmod -R g+w $PATH_TO_MONARC/data
 sudo chown -R www-data:www-data data
 
 
-echo -e "\n--- Update the project… ---\n"
+echo -e "\n--- Update the projectÃ¢â‚¬Â¦ ---\n"
 ./scripts/update-all.sh -d
 
 
@@ -300,7 +300,7 @@ echo -e "\n--- Create initial user and client ---\n"
 php ./bin/phinx seed:run -c ./module/Monarc/FrontOffice/migrations/phinx.php
 
 
-echo -e "\n--- Restarting Apache… ---\n"
+echo -e "\n--- Restarting ApacheÃ¢â‚¬Â¦ ---\n"
 sudo service apache2 restart > /dev/null
 
 echo -e "\n--- Adding autostart Services ---\n"

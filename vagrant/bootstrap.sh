@@ -47,15 +47,15 @@ sudo -E locale-gen en_US.UTF-8
 sudo -E dpkg-reconfigure locales
 
 
-echo -e "\n--- Installing now… ---\n"
+echo -e "\n--- Installing nowÃ¢â‚¬Â¦ ---\n"
 
-echo -e "\n--- Updating packages list… ---\n"
+echo -e "\n--- Updating packages listÃ¢â‚¬Â¦ ---\n"
 sudo apt-get update && sudo apt-get upgrade -y
 
-echo -e "\n--- Install base packages… ---\n"
+echo -e "\n--- Install base packagesÃ¢â‚¬Â¦ ---\n"
 sudo apt-get -y install vim zip unzip git gettext curl gsfonts > /dev/null
 
-echo -e "\n--- Install MariaDB specific packages and settings… ---\n"
+echo -e "\n--- Install MariaDB specific packages and settingsÃ¢â‚¬Â¦ ---\n"
 sudo apt -y install mariadb-server mariadb-client
 
 # Secure the MariaDB installation (especially by setting a strong root password)
@@ -86,26 +86,26 @@ expect -f - <<-EOF
 EOF
 sudo apt-get purge -y expect > /dev/null 2>&1
 
-echo -e "\n--- Configuring… ---\n"
+echo -e "\n--- ConfiguringÃ¢â‚¬Â¦ ---\n"
 sudo sed -i "s/skip-external-locking/#skip-external-locking/g" $MARIA_DB_CFG
 sudo sed -i "s/.*bind-address.*/bind-address = 0.0.0.0/" $MARIA_DB_CFG
 sudo sed -i "s/.*character-set-server.*/character-set-server = utf8mb4/" $MARIA_DB_CFG
 sudo sed -i "s/.*collation-server.*/collation-server = utf8mb4_general_ci/" $MARIA_DB_CFG
 
 
-echo -e "\n--- Setting up our MariaDB user for MONARC… ---\n"
+echo -e "\n--- Setting up our MariaDB user for MONARCÃ¢â‚¬Â¦ ---\n"
 sudo mysql -u root -p$DBPASSWORD_ADMIN -e "CREATE USER '$DBUSER_MONARC'@'%' IDENTIFIED BY '$DBPASSWORD_MONARC';"
 sudo mysql -u root -p$DBPASSWORD_ADMIN -e "GRANT ALL PRIVILEGES ON * . * TO '$DBUSER_MONARC'@'%';"
 sudo mysql -u root -p$DBPASSWORD_ADMIN -e "FLUSH PRIVILEGES;"
 sudo systemctl restart mariadb.service > /dev/null
 
-echo -e "\n--- Installing Apache… ---\n"
+echo -e "\n--- Installing ApacheÃ¢â‚¬Â¦ ---\n"
 sudo apt install apache2 -y
 
-echo -e "\n--- Installing PHP-specific packages… ---\n"
+echo -e "\n--- Installing PHP-specific packagesÃ¢â‚¬Â¦ ---\n"
 sudo apt-get install -y php8.1 php8.1-cli php8.1-common php8.1-mysql php8.1-zip php8.1-gd php8.1-mbstring php8.1-curl php8.1-xml php8.1-bcmath php8.1-intl php8.1-imagic php8.1-xdebug > /dev/null
 
-echo -e "\n--- Configuring PHP… ---\n"
+echo -e "\n--- Configuring PHPÃ¢â‚¬Â¦ ---\n"
 for key in upload_max_filesize post_max_size max_execution_time max_input_time memory_limit
 do
  sudo sed -i "s/^\($key\).*/\1 = $(eval echo \${$key})/" $PHP_INI
@@ -123,7 +123,7 @@ xdebug.discover_client_host=1
 xdebug.idekey=IDEKEY
 EOF"
 
-echo -e "\n--- Enabling mod-rewrite and ssl… ---\n"
+echo -e "\n--- Enabling mod-rewrite and sslÃ¢â‚¬Â¦ ---\n"
 sudo a2enmod rewrite > /dev/null 2>&1
 sudo a2enmod ssl > /dev/null 2>&1
 sudo a2enmod headers > /dev/null 2>&1
@@ -132,7 +132,7 @@ echo -e "\n--- Allowing Apache override to all ---\n"
 sudo sed -i "s/AllowOverride None/AllowOverride All/g" /etc/apache2/apache2.conf
 
 
-echo -e "\n--- Installing composer… ---\n"
+echo -e "\n--- Installing composerÃ¢â‚¬Â¦ ---\n"
 curl -sS https://getcomposer.org/installer | sudo php -- --install-dir=/usr/local/bin --filename=composer > /dev/null 2>&1
 if [ $? -ne 0 ]; then
     echo "\nERROR: unable to install composer\n"
@@ -140,11 +140,11 @@ if [ $? -ne 0 ]; then
 fi
 sudo composer self-update
 
-echo -e "\n--- Installing MONARC… ---\n"
+echo -e "\n--- Installing MONARCÃ¢â‚¬Â¦ ---\n"
 cd $PATH_TO_MONARC
 git config core.fileMode false
 
-echo -e "\n--- Installing the dependencies… ---\n"
+echo -e "\n--- Installing the dependenciesÃ¢â‚¬Â¦ ---\n"
 composer ins
 
 
@@ -158,7 +158,7 @@ cd $PATH_TO_MONARC
 
 
 # Front-end
-echo -e "\n--- Installation of Node, NPM… ---\n"
+echo -e "\n--- Installation of Node, NPMÃ¢â‚¬Â¦ ---\n"
 curl -sL https://deb.nodesource.com/setup_15.x | sudo bash -
 sudo apt-get install -y nodejs npm
 
@@ -205,12 +205,12 @@ sudo bash -c "cat << EOF > /etc/apache2/sites-enabled/000-default.conf
     SetEnv APP_DIR $PATH_TO_MONARC
 </VirtualHost>
 EOF"
-echo -e "\n--- Restarting Apache… ---\n"
+echo -e "\n--- Restarting ApacheÃ¢â‚¬Â¦ ---\n"
 sudo systemctl restart apache2.service > /dev/null
 
 
 
-echo -e "\n--- Installing the stats service… ---\n"
+echo -e "\n--- Installing the stats serviceÃ¢â‚¬Â¦ ---\n"
 sudo apt-get -y install postgresql python3 python3-pip python3-venv
 sudo -u postgres psql -c "CREATE USER $STATS_DB_USER WITH PASSWORD '$STATS_DB_PASSWORD';"
 sudo -u postgres psql -c "ALTER USER $STATS_DB_USER WITH SUPERUSER;"
@@ -365,27 +365,27 @@ return [
 EOF
 
 
-echo -e "\n--- Creation of the data bases… ---\n"
+echo -e "\n--- Creation of the data basesÃ¢â‚¬Â¦ ---\n"
 mysql -u $DBUSER_MONARC -p$DBPASSWORD_MONARC -e "CREATE DATABASE monarc_cli DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci;" > /dev/null
 mysql -u $DBUSER_MONARC -p$DBPASSWORD_MONARC -e "CREATE DATABASE monarc_common DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci;" > /dev/null
-echo -e "\n--- Populating MONARC DB… ---\n"
+echo -e "\n--- Populating MONARC DBÃ¢â‚¬Â¦ ---\n"
 mysql -u $DBUSER_MONARC -p$DBPASSWORD_MONARC monarc_common < db-bootstrap/monarc_structure.sql > /dev/null
 mysql -u $DBUSER_MONARC -p$DBPASSWORD_MONARC monarc_common < db-bootstrap/monarc_data.sql > /dev/null
 
 
-echo -e "\n--- Creating cache folders for backend… ---\n"
+echo -e "\n--- Creating cache folders for backendÃ¢â‚¬Â¦ ---\n"
 mkdir -p $PATH_TO_MONARC/data/cache
 mkdir -p $PATH_TO_MONARC/data/LazyServices/Proxy
 mkdir -p $PATH_TO_MONARC/data/DoctrineORMModule/Proxy
 mkdir -p $PATH_TO_MONARC/data/import/files
 
 
-echo -e "\n--- Adjusting user mod… ---\n"
+echo -e "\n--- Adjusting user modÃ¢â‚¬Â¦ ---\n"
 sudo usermod -aG www-data vagrant
 sudo usermod -aG vagrant www-data
 
 
-echo -e "\n--- Update the project… ---\n"
+echo -e "\n--- Update the projectÃ¢â‚¬Â¦ ---\n"
 sudo chown -R $USER:$(id -gn $USER) /home/vagrant/.config
 sudo npm install -g grunt-cli
 ./scripts/update-all.sh -d
@@ -401,7 +401,7 @@ sudo gem install mailcatcher
 sudo mailcatcher --http-ip 0.0.0.0
 
 
-echo -e "\n--- Restarting Apache… ---\n"
+echo -e "\n--- Restarting ApacheÃ¢â‚¬Â¦ ---\n"
 sudo systemctl restart apache2.service > /dev/null
 
 

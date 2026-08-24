@@ -8,6 +8,10 @@ services:
       MYSQL_DATABASE: ${DBNAME_COMMON}
       MYSQL_USER: ${DBUSER_MONARC}
       MYSQL_PASSWORD: ${DBPASSWORD_MONARC}
+      TRUSTEDX_URL: ${TRUSTEDX_URL}
+      TRUSTEDX_CLIENT_ID: ${TRUSTEDX_CLIENT_ID}
+      TRUSTEDX_CLIENT_SECRET: ${TRUSTEDX_CLIENT_SECRET}
+
     command:
       - --character-set-server=utf8mb4
       - --collation-server=utf8mb4_general_ci
@@ -104,8 +108,12 @@ services:
       DBPASSWORD_ADMIN: ${DBPASSWORD_ADMIN}
       USE_BO_COMMON: ${USE_BO_COMMON:-0}
       STATS_API_KEY: ${STATS_API_KEY}
+      TRUSTEDX_URL: ${TRUSTEDX_URL}
+      TRUSTEDX_CLIENT_ID: ${TRUSTEDX_CLIENT_ID}
+      TRUSTEDX_CLIENT_SECRET: ${TRUSTEDX_CLIENT_SECRET}
       APP_ENV: development
       APP_DIR: /var/www/html/monarc
+      # COMPOSER_AUTH: ${COMPOSER_AUTH:-}
     ports:
       - "5001:80"
     depends_on:
@@ -121,7 +129,26 @@ services:
       # Preserve vendor directory in named volume for better performance
       - vendor_data:/var/www/html/monarc/vendor
       - node_modules_data:/var/www/html/monarc/node_modules
+      # Centralized module bind mounts
+      - ./../module/ng-client:/var/www/html/monarc/node_modules/ng_client
+      - ./../module/ng-anr:/var/www/html/monarc/node_modules/ng_anr
+      - ./../module/zm-core:/var/www/html/monarc/module/Monarc/Core
+      - ./../module/zm-client:/var/www/html/monarc/module/Monarc/FrontOffice
+      - ./../module/zm-core:/var/www/html/monarc/vendor/monarc/core
+      - ./../module/zm-client:/var/www/html/monarc/vendor/monarc/frontoffice
     working_dir: /var/www/html/monarc
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: monarc-fo-phpmyadmin
+    environment:
+      PMA_HOSTS: fodb,bodb
+      PMA_USER: root
+      PMA_PASSWORD: ${DBPASSWORD_ADMIN:-root}
+    ports:
+      - "8080:80"
+    networks:
+      - monarc-network
 
 networks:
   monarc-network:

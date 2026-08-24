@@ -89,8 +89,9 @@ fi
 
 if [[ -d node_modules && -d node_modules/ng_anr ]]; then
     if [[ -d node_modules/ng_anr/.git ]]; then
-        checkout_to_latest_tag node_modules/ng_client
-        checkout_to_latest_tag node_modules/ng_anr
+        # checkout_to_latest_tag node_modules/ng_client
+        # checkout_to_latest_tag node_modules/ng_anr
+        echo "Utilisation des modules locaux"
     else
         npm update
     fi
