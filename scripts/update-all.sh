@@ -83,7 +83,9 @@ if [[ ! -f "config/autoload/local.php" && $bypass -eq 0 ]]; then
 fi
 
 if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-    git pull || { echo "A problem occurred while retrieving remote files from repository."; exit 1; }
+    # git pull || { echo "A problem occurred while retrieving remote files from repository."; exit 1; }
+    git pull origin master || echo "Git pull skipped for local dev branch."
+
 else
     echo "No .git metadata; skipping git pull."
 fi
