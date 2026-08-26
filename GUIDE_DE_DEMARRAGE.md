@@ -23,6 +23,8 @@
   - [Bug 3 : Fins de ligne Windows (`\r / bad interpreter`)](#bug-3--fins-de-ligne-windows-r--bad-interpreter)
   - [Bug 4 : Quota de requêtes GitHub dépassé (`COMPOSER_AUTH`)](#bug-4--quota-de-requêtes-github-dépassé-composer_auth)
   - [Bug 5 : Erreur 500 au Login / Retrace Chronologique du Déblocage de la Migration Phinx (`monarc_cli.actions_history`)](#bug-5--erreur-500-au-login--retrace-chronologique-du-déblocage-de-la-migration-phinx-monarc_cliactions_history)
+  - [Bug 6 : Spinner Infini au Login avec Réponse HTTP 200 sur `/auth`](#bug-6--spinner-infini-au-login-avec-réponse-http-200-sur-auth-configuration-des-langues-manquante-dans-zm-core)
+  - [Bug 7 : Erreur 500 sur `/api/models` / Branchement Base Commune BO (`monarc-bo-db`) dans `local.php`](#bug-7--erreur-500-sur-apimodels--branchement-base-commune-bo-monarc-bo-db-dans-localphp)
 
 ---
 
@@ -372,3 +374,62 @@ Puis redémarrer le conteneur applicatif :
 ```powershell
 docker compose -f docker-compose.dev.yml restart monarcfoapp
 ```
+
+---
+
+### Bug 7 : Erreur 500 sur `/api/models` / Branchement Base Commune BO (`monarc-bo-db`) dans `local.php`
+
+#### 📌 Symptôme Côté Utilisateur & Console Réseau
+Lors du clic sur **« Créer une analyse des risques »**, la boîte de dialogue s'ouvre mais la liste des modèles et des langues reste vide, et la console réseau affiche une erreur **HTTP 500** sur `GET /api/models` :
+```text
+SQLSTATE[42S22]: Column not found: 1054 Unknown column 'm0_.are_scales_updatable' in 'SELECT'
+```
+
+#### 🔍 Origine de l'Incohérence
+1. L'entité Doctrine `Model.php` (`zm-core`) interroge la colonne **`are_scales_updatable`**.
+2. Dans l'architecture officielle de MONARC, la base commune `monarc_common` (contenant le catalogue des modèles de risques) est **propriété du BackOffice (`MonarcAppBO`)**.
+3. Si le FrontOffice essaie de lire sa propre base `fodb` sans qu'elle contienne les modèles ou avec un vieux schéma de 2016 (`is_scales_updatable`), Doctrine lève une erreur 500.
+
+#### 🛠️ Résolution Complète & Définitive
+
+##### 1. Configurer la connexion `orm_default` vers le BackOffice dans `local.php`
+Dans **`MonarcAppFO/config/autoload/local.php`** (lignes 10 à 28), faire pointer `orm_default` vers le conteneur du BackOffice (**`monarc-bo-db`**) :
+```php
+    'doctrine' => [
+        'connection' => [
+            'orm_default' => [
+                'params' => [
+                    'host' => 'monarc-bo-db', // 👈 Branchement direct sur la base des modèles du BO
+                    'user' => 'sqlmonarcuser',
+                    'password' => 'sqlmonarcuser',
+                    'dbname' => 'monarc_common',
+                ],
+            ],
+            'orm_cli' => [
+                'params' => [
+                    'host' => 'fodb',          // 👈 Le FrontOffice garde sa propre base client
+                    'user' => 'sqlmonarcuser',
+                    'password' => 'sqlmonarcuser',
+                    'dbname' => 'monarc_cli',
+                ],
+            ],
+        ],
+    ],
+```
+
+##### 2. Pérenniser dans `MonarcAppFO/docker-entrypoint.sh`
+À la ligne 101 du template de génération `cat > config/autoload/local.php` :
+```bash
+'host' => 'monarc-bo-db',
+```
+
+##### 3. Corriger le schéma initial de bootstrap (`monarc_structure.sql`)
+Dans **`MonarcAppFO/db-bootstrap/monarc_structure.sql`** et **`MonarcAppBO/db-bootstrap/monarc_structure.sql`** (ligne 586) :
+```sql
+`are_scales_updatable` tinyint(4) DEFAULT '1',
+```
+
+#### ✅ Résultat
+- Le FrontOffice lit directement les modèles du BackOffice en temps réel, sans aucune commande de synchronisation manuelle.
+- L'API `/api/models` renvoie `HTTP 200` et la boîte de dialogue de création d'analyse des risques affiche immédiatement les modèles et les langues.
+

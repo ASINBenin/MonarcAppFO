@@ -166,11 +166,20 @@ return [
         'apiKey' => '${STATS_API_KEY:-}',
     ],
 
-    'trustedx' => [
-        'trustedx_url' => '${TRUSTEDX_URL}',
-        'client_id' => '${TRUSTEDX_CLIENT_ID}',
-        'client_secret' => '${TRUSTEDX_CLIENT_SECRET}',
-        'scope' => '${TRUSTEDX_SCOPE}',
+    'sso_providers' => [
+        'trustedx_pki' => [
+            'name'             => 'Identité Numérique PKI (TrustedX)',
+            'is_active'        => true,
+            'type'             => 'oauth2',
+            'authorize_url'    => '${TRUSTEDX_URL}/trustedx-authserver/oauth/main-as',
+            'token_url'        => '${TRUSTEDX_URL}/trustedx-authserver/oauth/token',
+            'userinfo_url'     => '${TRUSTEDX_URL}/trustedx-resources/openid/v1/users/me',
+            'client_id'        => '${TRUSTEDX_CLIENT_ID}',
+            'client_secret'    => '${TRUSTEDX_CLIENT_SECRET}',
+            'scope'            => 'urn:gob:basic:profile urn:safelayer:eidas:sign:process:document',
+            'acr_values'       => 'urn:gob:authentication:flow:password',
+            'identifier_claim' => 'npi',
+        ],
     ],
 
     'import' => [
