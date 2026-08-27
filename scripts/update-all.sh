@@ -121,8 +121,9 @@ fi
 
 if [[ -d node_modules/ng_client && -d node_modules/ng_anr ]]; then
     if [[ -d node_modules/ng_client/.git && -d node_modules/ng_anr/.git ]]; then
-        checkout_to_ref_if_set_or_latest_tag node_modules/ng_client "$frontendRef"
-        checkout_to_ref_if_set_or_latest_tag node_modules/ng_anr "$frontendRef"
+        # checkout_to_ref_if_set_or_latest_tag node_modules/ng_client "$frontendRef"
+        # checkout_to_ref_if_set_or_latest_tag node_modules/ng_anr "$frontendRef"
+        echo "Utilisation des modules frontend locaux / ASINBenin."
     else
         echo "node_modules/ng_* are not git repos; skipping frontend repository update."
     fi

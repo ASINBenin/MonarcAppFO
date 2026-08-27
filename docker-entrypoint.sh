@@ -39,6 +39,14 @@ if [ ! -f "/var/www/html/monarc/.docker-initialized" ]; then
     echo -e "${YELLOW}Installing Composer dependencies...${NC}"
     composer install --ignore-platform-req=php --no-interaction
 
+    # Ensure local module overrides are applied over vendor
+    if [ -d "module/Monarc/FrontOffice" ]; then
+        cp -rf module/Monarc/FrontOffice/* vendor/monarc/frontoffice/ 2>/dev/null || true
+    fi
+    if [ -d "module/Monarc/Core" ]; then
+        cp -rf module/Monarc/Core/* vendor/monarc/core/ 2>/dev/null || true
+    fi
+
     # Create module symlinks
     echo -e "${YELLOW}Creating module symlinks...${NC}"
     mkdir -p module/Monarc
@@ -46,8 +54,13 @@ if [ ! -f "/var/www/html/monarc/.docker-initialized" ]; then
     # ln -sfn ./../../vendor/monarc/core Core
     # ln -sfn ./../../vendor/monarc/frontoffice FrontOffice
 
-    ln -sfn /var/www/html/zm-core Core
-    ln -sfn /var/www/html/zm-client FrontOffice
+    if [ ! -d "Core" ] && [ ! -L "Core" ]; then
+        ln -sfn ./../../vendor/monarc/core Core
+    fi
+    if [ ! -d "FrontOffice" ] && [ ! -L "FrontOffice" ]; then
+        ln -sfn ./../../vendor/monarc/frontoffice FrontOffice
+    fi
+
     cd /var/www/html/monarc
 
     # Clone frontend repositories
@@ -55,12 +68,15 @@ if [ ! -f "/var/www/html/monarc/.docker-initialized" ]; then
     mkdir -p node_modules
     cd node_modules
 
+    ln -sfn /var/www/html/ng-client ng_client
+    ln -sfn /var/www/html/ng-anr ng_anr
+
     if [ ! -d "ng_client" ]; then
-        git clone --config core.fileMode=false https://github.com/monarc-project/ng-client.git ng_client
+        git clone --config core.fileMode=false https://github.com/ASINBenin/ng-client.git ng_client
     fi
 
     if [ ! -d "ng_anr" ]; then
-        git clone --config core.fileMode=false https://github.com/monarc-project/ng-anr.git ng_anr
+        git clone --config core.fileMode=false https://github.com/ASINBenin/ng-anr.git ng_anr
     fi
 
     cd /var/www/html/monarc
@@ -174,6 +190,22 @@ return [
 
     'deliverable' => [
         'pdfConverterBinary' => '${PDF_CONVERTER_BINARY:-/usr/bin/soffice}',
+    ],
+
+    'sso_providers' => [
+        'trustedx_pki' => [
+            'name'             => 'Identité Numérique PKI (TrustedX)',
+            'is_active'        => true,
+            'type'             => 'oauth2',
+            'authorize_url'    => '${TRUSTEDX_URL}/trustedx-authserver/oauth/main-as',
+            'token_url'        => '${TRUSTEDX_URL}/trustedx-authserver/oauth/token',
+            'userinfo_url'     => '${TRUSTEDX_URL}/trustedx-resources/openid/v1/users/me',
+            'client_id'        => '${TRUSTEDX_CLIENT_ID}',
+            'client_secret'    => '${TRUSTEDX_CLIENT_SECRET}',
+            'scope'            => 'urn:gob:basic:profile urn:safelayer:eidas:sign:process:document',
+            'acr_values'       => 'urn:gob:authentication:flow:password',
+            'identifier_claim' => 'npi',
+        ],
     ],
 
     'captcha' => [

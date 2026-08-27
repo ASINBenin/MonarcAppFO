@@ -3,15 +3,20 @@
 > **Application Hôte :** `MonarcAppFO` (Port HTTP `5001`)  
 > **Racine de l'application :** `./MonarcAppFO`  
 > **Structure des dépôts :** Dépôts frères à la racine de `v_current` (`../zm-core`, `../zm-client`, `../ng-anr`, `../ng-client`)  
+> **Organisation GitHub :** [ASINBenin](https://github.com/ASINBenin)  
 
 ---
 
 ## 📌 Table des Matières
 - [🏗️ 1. Architecture & Dépendances du FrontOffice](#️-1-architecture--dépendances-du-frontoffice)
-- [🛠️ 2. Configuration & Points d'Intégration Clés](#️-2-configuration--points-dintégration-clés)
+- [🛠️ 2. Configurations de Déroutage ASINBenin & Points d'Intégration Clés](#️-2-configurations-de-déroutage-asinbenin--points-dintégration-clés)
   - [A. Configuration Environnement (`.env`)](#a-configuration-environnement-env)
   - [B. Montage des Dépôts Locaux (`docker-compose.dev.yml`)](#b-montage-des-dépôts-locaux-docker-composedevyml)
-  - [C. Liens Symboliques Dynamiques (`docker-entrypoint.sh`)](#c-liens-symboliques-dynamiques-docker-entrypointsh)
+  - [C. Redirection npm (`package.json`)](#c-redirection-npm-packagejson)
+  - [D. Redirection Composer (`composer.json`)](#d-redirection-composer-composerjson)
+  - [E. Liens Symboliques Dynamiques Backend & Frontend (`docker-entrypoint.sh`)](#e-liens-symboliques-dynamiques-backend--frontend-docker-entrypointsh)
+  - [F. Neutralisation des Checkouts Git Distants (`scripts/update-all.sh`)](#f-neutralisation-des-checkouts-git-distants-scriptsupdate-allsh)
+  - [G. Activation du Fournisseur SSO (`local.php`)](#g-activation-du-fournisseur-sso-localphp)
 - [🚀 3. Procédure Automatisée de Démarrage (PowerShell)](#-3-procédure-automatisée-de-démarrage-powershell)
 - [🌐 4. Accès & Identifiants Administrateur](#-4-accès--identifiants-administrateur)
 - [⚠️ 5. Guide de Dépannage & Correctifs Historiques](#-5-guide-de-dépannage--correctifs-historiques)
@@ -31,12 +36,12 @@ L'application `MonarcAppFO` s'appuie sur 4 modules situés dans le répertoire p
 - **`../ng-client`** ➔ Frontend Angular Client FO (`node_modules/ng_client`)
 
 Bases de données associées :
-- **`monarc_cli`** : Données de l'instance client (analyses de risques, utilisateurs, logs d'actions).
+- **`monarc_cli`** : Données de l'instance client (analyses de risques, utilisateurs, logs d'actions, identités SSO).
 - **`monarc_common`** : Catalogue commun partagé (modèles ISO/ROLF, menaces, vulnérabilités, mesures).
 
 ---
 
-## 🛠️ 2. Configuration & Points d'Intégration Clés
+## 🛠️ 2. Configurations de Déroutage ASINBenin & Points d'Intégration Clés
 
 ### A. Configuration Environnement (`.env`)
 Dans `MonarcAppFO/.env` :
@@ -72,13 +77,84 @@ USE_BO_COMMON=0
       - node_modules_data:/var/www/html/monarc/node_modules
 ```
 
-### C. Liens Symboliques Dynamiques (`docker-entrypoint.sh`)
+### C. Redirection npm (`package.json`)
+Dans `MonarcAppFO/package.json`, pointer les dépendances frontend vers l'organisation **ASINBenin** :
+```json
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ASINBenin/MonarcAppFO"
+  },
+  "dependencies": {
+    "ng_anr": "git+https://github.com/ASINBenin/ng-anr.git",
+    "ng_client": "git+https://github.com/ASINBenin/ng-client.git"
+  }
+```
+
+### D. Redirection Composer (`composer.json`)
+Dans `MonarcAppFO/composer.json`, déclarer les dépôts VCS pointant vers **ASINBenin** :
+```json
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/ASINBenin/zm-core.git"
+        },
+        {
+            "type": "vcs",
+            "url": "https://github.com/ASINBenin/zm-client.git"
+        }
+    ],
+```
+
+### E. Liens Symboliques Dynamiques Backend & Frontend (`docker-entrypoint.sh`)
+Dans `MonarcAppFO/docker-entrypoint.sh` :
 ```bash
+    # Liens Backend
     mkdir -p module/Monarc
     cd module/Monarc
     ln -sfn /var/www/html/zm-core Core
     ln -sfn /var/www/html/zm-client FrontOffice
     cd /var/www/html/monarc
+
+    # Liens Frontend
+    mkdir -p node_modules
+    cd node_modules
+    ln -sfn /var/www/html/ng-client ng_client
+    ln -sfn /var/www/html/ng-anr ng_anr
+    cd /var/www/html/monarc
+```
+
+### F. Neutralisation des Checkouts Git Distants (`scripts/update-all.sh`)
+Dans `MonarcAppFO/scripts/update-all.sh`, neutraliser le `checkout_to_ref` pour préserver le code local :
+```bash
+if [[ -d node_modules/ng_client && -d node_modules/ng_anr ]]; then
+    if [[ -d node_modules/ng_client/.git && -d node_modules/ng_anr/.git ]]; then
+        # checkout_to_ref_if_set_or_latest_tag node_modules/ng_client "$frontendRef"
+        # checkout_to_ref_if_set_or_latest_tag node_modules/ng_anr "$frontendRef"
+        echo "Utilisation des modules frontend locaux / ASINBenin."
+    else
+        echo "node_modules/ng_* are not git repos; skipping frontend repository update."
+    fi
+fi
+```
+
+### G. Activation du Fournisseur SSO (`local.php`)
+Dans `MonarcAppFO/config/autoload/local.php` :
+```php
+    'sso_providers' => [
+        'trustedx_pki' => [
+            'name'             => 'Identité Numérique PKI (TrustedX)',
+            'is_active'        => true,
+            'type'             => 'oauth2',
+            'authorize_url'    => 'https://test-tx-pki.gouv.bj/trustedx-authserver/oauth/main-as',
+            'token_url'        => 'https://test-tx-pki.gouv.bj/trustedx-authserver/oauth/token',
+            'userinfo_url'     => 'https://test-tx-pki.gouv.bj/trustedx-resources/openid/v1/users/me',
+            'client_id'        => 'pkiportalfront',
+            'client_secret'    => 'pkiPortalFront',
+            'scope'            => 'urn:gob:basic:profile urn:safelayer:eidas:sign:process:document',
+            'acr_values'       => 'urn:gob:authentication:flow:password',
+            'identifier_claim' => 'npi',
+        ],
+    ],
 ```
 
 ---
@@ -119,6 +195,7 @@ docker compose -f docker-compose.dev.yml up -d --build
 - **URL FrontOffice :** [http://localhost:5001](http://localhost:5001)
 - **Identifiant / Email :** `admin@admin.localhost`
 - **Mot de passe :** `admin`
+- **Authentification SSO :** Bouton direct `Authentification NPI/NPIR` sur la page d'accueil.
 
 ---
 
