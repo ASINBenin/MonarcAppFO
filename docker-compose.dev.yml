@@ -155,6 +155,7 @@ services:
       - ../zm-client:/var/www/html/monarc/vendor/monarc/frontoffice
       - ../zm-core:/var/www/html/monarc/module/Monarc/Core
       - ../zm-client:/var/www/html/monarc/module/Monarc/FrontOffice
+      - ../zm-extension:/var/www/html/monarc/module/Monarc/Extension
 
       # Montages directs des modules locaux Frontend (AngularJS & Grunt)
       - ../ng-client:/var/www/html/monarc/node_modules/ng_client

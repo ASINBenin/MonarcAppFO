@@ -34,6 +34,7 @@ return [
         'Laminas\Log',
         'Monarc\Core',
         'Monarc\FrontOffice',
+        'Monarc\Extension',
         'Laminas\Cache',
         'Laminas\Form',
         'Laminas\InputFilter',
