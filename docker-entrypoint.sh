@@ -39,7 +39,6 @@ if [ ! -f "/var/www/html/monarc/.docker-initialized" ]; then
     echo -e "${YELLOW}Installing Composer dependencies...${NC}"
     composer install --ignore-platform-req=php --no-interaction
 
-    # Ensure local module overrides are applied over vendor
     if [ -d "module/Monarc/FrontOffice" ]; then
         cp -rf module/Monarc/FrontOffice/* vendor/monarc/frontoffice/ 2>/dev/null || true
     fi
@@ -194,17 +193,22 @@ return [
 
     'sso_providers' => [
         'trustedx_pki' => [
-            'name'             => 'Identité Numérique PKI (TrustedX)',
-            'is_active'        => true,
-            'type'             => 'oauth2',
-            'authorize_url'    => '${TRUSTEDX_URL}/trustedx-authserver/oauth/main-as',
-            'token_url'        => '${TRUSTEDX_URL}/trustedx-authserver/oauth/token',
-            'userinfo_url'     => '${TRUSTEDX_URL}/trustedx-resources/openid/v1/users/me',
-            'client_id'        => '${TRUSTEDX_CLIENT_ID}',
-            'client_secret'    => '${TRUSTEDX_CLIENT_SECRET}',
-            'scope'            => 'urn:gob:basic:profile urn:safelayer:eidas:sign:process:document',
-            'acr_values'       => 'urn:gob:authentication:flow:password',
-            'identifier_claim' => 'npi',
+            'name'                  => 'Identité Numérique PKI (TrustedX)',
+            'is_active'             => true,
+            'type'                  => 'oauth2',
+            'base_url'              => '${TRUSTEDX_URL}',
+            'authorize_url'         => '${TRUSTEDX_URL}/trustedx-authserver/oauth/main-as',
+            'token_url'             => '${TRUSTEDX_URL}/trustedx-authserver/oauth/token',
+            'userinfo_url'          => '${TRUSTEDX_URL}/trustedx-resources/openid/v1/users/me',
+            'esignsp_processes_url' => '${TRUSTEDX_URL}/trustedx-resources/esignsp/v2/signer_processes',
+            'esignsp_ui_url'        => '${TRUSTEDX_URL}/trustedx-resources/esignsp/v2/ui',
+            'esignsp_documents_url' => '${TRUSTEDX_URL}/trustedx-resources/esignsp/v2/documents',
+            'logout_url'            => '${TRUSTEDX_URL}/trustedx-authserver/gob-idp/logout',
+            'client_id'             => '${TRUSTEDX_CLIENT_ID}',
+            'client_secret'         => '${TRUSTEDX_CLIENT_SECRET}',
+            'scope'                 => 'urn:gob:basic:profile urn:safelayer:eidas:sign:process:document',
+            'acr_values'            => 'urn:gob:authentication:flow:password',
+            'identifier_claim'      => 'npi',
         ],
     ],
 

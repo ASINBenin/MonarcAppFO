@@ -103,7 +103,6 @@ fi
 
 pathCore="module/Monarc/Core"
 pathFO="module/Monarc/FrontOffice"
-pathExtension="module/Monarc/Extension"
 
 if [[ $bypass -eq 0 ]]; then
     if [ -e data/backup/credentialsmysql.cnf ]; then
@@ -118,7 +117,6 @@ if [[ $bypass -eq 0 ]]; then
 
     migrate_module $pathCore
     migrate_module $pathFO
-    migrate_module $pathExtension
 fi
 
 if [[ -d node_modules/ng_client && -d node_modules/ng_anr ]]; then
