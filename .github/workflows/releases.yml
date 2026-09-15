@@ -23,6 +23,15 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
+    - name: Detect stats image changes
+      uses: dorny/paths-filter@v3
+      id: stats_changes
+      with:
+        filters: |
+          stats:
+            - 'Dockerfile.stats'
+            - 'docker-stats-entrypoint.sh'
+
     - name: install deps
       run: sudo apt-get update && sudo apt install -y gettext
 
@@ -179,7 +188,7 @@ jobs:
 
     - name: Docker metadata (stats)
       id: meta_stats
-      if: startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/master-asin'
+      if: startsWith(github.ref, 'refs/tags/') || (github.ref == 'refs/heads/master-asin' && steps.stats_changes.outputs.stats == 'true')
       uses: docker/metadata-action@v5
       with:
         images: ${{ steps.image_names.outputs.stats }}
@@ -191,7 +200,7 @@ jobs:
           org.opencontainers.image.revision=${{ github.sha }}
 
     - name: Build and push stats image
-      if: startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/master-asin'
+      if: startsWith(github.ref, 'refs/tags/') || (github.ref == 'refs/heads/master-asin' && steps.stats_changes.outputs.stats == 'true')
       uses: docker/build-push-action@v6
       with:
         context: .
