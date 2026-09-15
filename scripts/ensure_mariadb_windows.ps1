@@ -33,7 +33,10 @@ if (-not $mysqlExe) {
 
 Write-Output "Utilisation de $($mysqlExe.FullName)"
 
-# Mot de passe root WAMP par defaut : vide. Si tu l'as change, passe -DBPasswordAdmin.
+# Mot de passe root WAMP : VIDE par defaut sur une install WAMP standard, tant
+# que tu ne l'as pas change toi-meme. DBPASSWORD_ADMIN dans .env sert au root
+# MariaDB *natif de la VM* (etape 3 du guide) - sur WAMP, laisse-le vide sauf
+# si tu as explicitement mis un mot de passe root a WAMP.
 $rootAuthArgs = @("-u", "root")
 if ($DBPasswordAdmin) { $rootAuthArgs += "-p$DBPasswordAdmin" }
 
@@ -48,6 +51,9 @@ FLUSH PRIVILEGES;
 
 Write-Output "Verification/creation des bases et de l'utilisateur applicatif..."
 $sql | & $mysqlExe.FullName @rootAuthArgs
+if ($LASTEXITCODE -ne 0) {
+    throw "mysql.exe a echoue (code $LASTEXITCODE) - rien n'a ete cree. Verifie DBPASSWORD_ADMIN : sur WAMP, laisse-le vide sauf si tu as toi-meme mis un mot de passe root a WAMP."
+}
 
 Write-Output "MariaDB (WAMP) pret : bases '$DBNameCommon' et '$DBNameCli', utilisateur '$DBUserMonarc'."
 Write-Output "Note : le conteneur applicatif s'y connecte via host.docker.internal (voir DBHOST dans .env) - le utilisateur cree sur '%' (au lieu de 'localhost') est ce qui l'autorise depuis l'exterieur de WAMP."
