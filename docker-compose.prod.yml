@@ -48,7 +48,12 @@ services:
       - "traefik.http.middlewares.redirect-https.redirectscheme.scheme=https"
 
   traefik:
-    image: traefik:v3.1
+    # Épinglé en v2.11 (et non v3.x) : sur Docker Engine >= 29 (API 1.55, très
+    # récent), le client Docker embarqué dans Traefik v3.1/v3.5 échoue avec
+    # "API returned a 400 (Bad Request)" lors de la négociation de version —
+    # confirmé/isolé pendant les tests. v2.11 négocie correctement. Voir §6 du
+    # guide de déploiement si ce comportement doit être revérifié sur la VM.
+    image: traefik:v2.11
     container_name: monarc-traefik
     restart: unless-stopped
     command:

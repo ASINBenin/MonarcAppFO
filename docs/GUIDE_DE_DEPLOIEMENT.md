@@ -4,19 +4,21 @@
 > **Organisation GitHub :** [ASINBenin](https://github.com/ASINBenin)
 > **Image Docker :** `ghcr.io/asinbenin/monarcappfo:master-asin`
 
-> ⚠️ **État de validation honnête** : l'application elle-même (image, base de
-> données, migrations, page de login) a été testée avec succès. **Le conteneur
-> Traefik (reverse proxy HTTPS) n'a en revanche jamais fonctionné correctement
-> lors des tests.** Diagnostic précis obtenu (voir §6) : le socket Docker
-> fonctionne parfaitement (confirmé avec `curl --unix-socket`), mais Traefik
-> reçoit systématiquement `API returned a 400 (Bad Request)` — un souci de
-> **négociation de version d'API Docker**, le poste de test tournant sur un
-> Docker Engine 29.6.1 (API 1.55) inhabituellement récent pour une CLI Traefik
-> v3.1/v3.5. **Sur la VM, vérifie Traefik en premier (§3, étape 5)** — une VM
-> Linux standard aura très probablement une version de Docker plus classique,
-> donc ce problème précis a de bonnes chances de ne pas se reproduire. S'il
-> revient, la solution (§6) est de fixer `DOCKER_API_VERSION` ou d'utiliser une
-> version de Docker Engine plus proche de ce que Traefik attend.
+> ✅ **État de validation** : l'application (image, base de données, migrations,
+> page de login) ET Traefik (reverse proxy) ont été testés avec succès en local
+> — routage par nom d'hôte via les labels Docker confirmé (redirection
+> HTTP→HTTPS 302 fonctionnelle). Seul le HTTPS/Let's Encrypt lui-même n'a pas
+> pu être testé localement (il faut un vrai domaine public joignable) — teste-le
+> en premier sur la VM (§3, étape 5).
+>
+> **Détail du bug Traefik rencontré et corrigé** : sur Docker Engine ≥ 29 (API
+> 1.55, très récent), le client Docker embarqué dans Traefik v3.1/v3.5 échoue
+> la négociation de version d'API (`API returned a 400 (Bad Request)`), alors
+> que le socket Docker lui-même fonctionne parfaitement (confirmé via
+> `curl --unix-socket`). **Traefik v2.11 négocie correctement** avec cet Engine
+> — c'est la version épinglée dans `docker-compose.prod.yml`. Peu probable sur
+> une VM Linux standard (Engine plus classique), mais si `docker logs
+> monarc-traefik` remontre ce 400, c'est confirmé comme le même bug (voir §6).
 
 ---
 
@@ -137,36 +139,27 @@ Ces correctifs sont dans l'historique Git de `master-asin` ; ils expliquent pour
 
 ## 6. Dépannage
 
-**Traefik boucle sur `Failed to retrieve information of the docker client`** →
-Diagnostic étape par étape :
+**Traefik boucle sur `Failed to retrieve information of the docker client` / `API returned a 400 (Bad Request)`** →
+C'est le bug de négociation de version d'API Docker déjà rencontré et corrigé (voir l'encart en haut de ce guide) : `docker-compose.prod.yml` épingle désormais `traefik:v2.11` (au lieu de `v3.x`), ce qui résout ce problème. Si tu le revois malgré tout (ex: après avoir changé l'image Traefik) :
 
 1. **Vérifier que le socket lui-même fonctionne** (élimine un problème de permissions/montage) :
    ```bash
    docker run --rm --user root -v /var/run/docker.sock:/var/run/docker.sock \
      curlimages/curl -s --unix-socket /var/run/docker.sock http://localhost/version
    ```
-   Si ça répond avec un JSON contenant `"ApiVersion"` → le socket est sain, le problème est spécifique au client Docker intégré à Traefik (continuer ci-dessous). Si ça échoue déjà ici → problème de droits (`ls -la /var/run/docker.sock`, vérifier que l'utilisateur est dans le groupe `docker`).
+   Si ça répond avec un JSON contenant `"ApiVersion"` → le socket est sain. Si ça échoue déjà ici → problème de droits (`ls -la /var/run/docker.sock`, vérifier que l'utilisateur est dans le groupe `docker`), pas le même bug.
 
-2. **Regarder le message d'erreur précis** :
-   ```bash
-   docker logs monarc-traefik
-   ```
-   - Si tu vois `API returned a 400 (Bad Request) but provided no error-message` → c'est un problème de **négociation de version d'API Docker** (exactement ce qu'on a rencontré en test). Fixe la version explicitement dans `docker-compose.prod.yml`, service `traefik` :
-     ```yaml
-     environment:
-       - DOCKER_API_VERSION=1.44   # adapte à la sortie de: docker version --format '{{.Server.APIVersion}}'
-     ```
-     Si ça ne suffit pas, essaie une version de Traefik plus récente (`traefik:v3.5` ou plus) — son client Docker interne est mis à jour plus souvent.
-   - Si tu vois autre chose (permission denied, connection refused...) → problème de montage/droits, voir point 1.
+2. **Regarder le message d'erreur précis** avec `docker logs monarc-traefik` :
+   - `API returned a 400 (Bad Request)` → repasser (ou rester) sur `traefik:v2.11` dans `docker-compose.prod.yml`. Testé et validé avec Docker Engine 29.6.1 (API 1.55) : la connexion au provider Docker et le routage par labels (redirection HTTP→HTTPS) fonctionnent correctement avec cette version.
+   - Autre chose (permission denied, connection refused...) → problème de montage/droits, voir point 1.
 
-3. **Plan B temporaire** — contourner Traefik pour au moins valider que l'appli elle-même fonctionne, en l'exposant directement (HTTP simple, sans HTTPS), pendant que tu débogues Traefik en parallèle :
+3. **Plan B temporaire** si besoin de débloquer vite — contourner Traefik pour valider que l'appli elle-même fonctionne, en l'exposant directement (HTTP simple, sans HTTPS) :
    ```bash
    docker compose -f docker-compose.prod.yml up -d monarcfoapp
    # ajouter un port directement sur le service le temps de diagnostiquer :
    # via un fichier override docker-compose.override.yml avec "ports: - '8090:80'"
    curl -I http://localhost:8090/
    ```
-   Ça permet de confirmer que le problème vient bien de Traefik et pas de l'appli, avant de creuser plus loin.
 
 **`unauthorized` au `docker pull`** → le paquet GHCR n'est pas public. Voir §2.
 
