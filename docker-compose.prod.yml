@@ -1,33 +1,15 @@
 services:
-  fodb:
-    image: mariadb:10.11
-    container_name: monarc-fo-db
-    restart: unless-stopped
-    environment:
-      MYSQL_ROOT_PASSWORD: ${DBPASSWORD_ADMIN}
-      MYSQL_DATABASE: ${DBNAME_COMMON}
-      MYSQL_USER: ${DBUSER_MONARC}
-      MYSQL_PASSWORD: ${DBPASSWORD_MONARC}
-    command:
-      - --character-set-server=utf8mb4
-      - --collation-server=utf8mb4_general_ci
-      - --sql-mode=ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION
-    volumes:
-      - db_data:/var/lib/mysql
-    networks:
-      - monarc-network
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DBPASSWORD_ADMIN}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
+  # Pour ajouter un 2ᵉ client sur cette même machine (comme "Client 1 + Client 2" sur
+  # le même FO dans le schéma officiel) : duplique ce bloc "monarcfoapp" en le
+  # renommant (ex: monarcfoapp_client2), avec son propre container_name, ses propres
+  # DOMAIN_FO/DBNAME_CLI/DBUSER_MONARC dans .env, et des noms de routeurs Traefik
+  # uniques dans les labels (ex: "monarcfo-client2" au lieu de "monarcfo").
   monarcfoapp:
     image: ${MONARC_IMAGE:-ghcr.io/asinbenin/monarcappfo:master-asin}
     container_name: monarc-fo-app
     restart: unless-stopped
     environment:
-      DBHOST: fodb
+      DBHOST: ${DBHOST:-host.docker.internal}
       DBNAME_COMMON: ${DBNAME_COMMON}
       DBNAME_CLI: ${DBNAME_CLI}
       DBUSER_MONARC: ${DBUSER_MONARC}
@@ -42,11 +24,8 @@ services:
       MONARC_SSO_ENCRYPTION_KEY: ${MONARC_SSO_ENCRYPTION_KEY}
       APP_ENV: production
       APP_DIR: /var/www/html/monarc
-    ports:
-      - "${APP_PORT_HOST:-80}:80"
-    depends_on:
-      fodb:
-        condition: service_healthy
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
       - monarc-network
     volumes:
@@ -57,11 +36,48 @@ services:
       timeout: 5s
       retries: 5
       start_period: 30s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.monarcfo.rule=Host(`${DOMAIN_FO:-localhost}`)"
+      - "traefik.http.routers.monarcfo.entrypoints=websecure"
+      - "traefik.http.routers.monarcfo.tls.certresolver=letsencrypt"
+      - "traefik.http.services.monarcfo.loadbalancer.server.port=80"
+      - "traefik.http.routers.monarcfo-http.rule=Host(`${DOMAIN_FO:-localhost}`)"
+      - "traefik.http.routers.monarcfo-http.entrypoints=web"
+      - "traefik.http.routers.monarcfo-http.middlewares=redirect-https"
+      - "traefik.http.middlewares.redirect-https.redirectscheme.scheme=https"
+
+  traefik:
+    image: traefik:v3.1
+    container_name: monarc-traefik
+    restart: unless-stopped
+    command:
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      # Fournisseur de routes statiques : dossier vide pour l'instant. Le jour où un
+      # FO tourne sur une autre machine, on ajoute juste un fichier .yml ici (voir
+      # ./traefik/dynamic/README.md) — aucun changement sur ce conteneur Traefik.
+      - "--providers.file.directory=/etc/traefik/dynamic"
+      - "--providers.file.watch=true"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.letsencrypt.acme.tlschallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL:-admin@example.com}"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - traefik_certs:/letsencrypt
+      - ./traefik/dynamic:/etc/traefik/dynamic:ro
+    networks:
+      - monarc-network
 
 networks:
   monarc-network:
     name: ${MONARC_NETWORK_NAME:-monarc-network}
 
 volumes:
-  db_data:
   app_data:
+  traefik_certs:
