@@ -1,7 +1,7 @@
 #!/bin/bash
 BASE_DIR=$(pwd)
 
-mkdir -p "$BASE_DIR/public/js/anr" "$BASE_DIR/public/css/anr" "$BASE_DIR/public/views/anr" "$BASE_DIR/public/views/dialogs" "$BASE_DIR/public/img"
+mkdir -p "$BASE_DIR/public/js/anr" "$BASE_DIR/public/css/anr" "$BASE_DIR/public/css/css" "$BASE_DIR/public/views/anr" "$BASE_DIR/public/views/dialogs" "$BASE_DIR/public/img"
 
 echo "Linking ng_anr resources"
 cd "$BASE_DIR/public/js/anr" && find ../../../node_modules/ng_anr/src -type f -name "*" -exec ln -sf {} . \; 2>/dev/null
@@ -14,6 +14,9 @@ cd "$BASE_DIR/public/js" && find ../../node_modules/ng_client/src -type f -name 
 cd "$BASE_DIR/public/views" && find ../../node_modules/ng_client/views -type f -maxdepth 1 -name "*" -exec ln -sf {} . \; 2>/dev/null
 cd "$BASE_DIR/public/views/dialogs" && find ../../../node_modules/ng_client/views/dialogs -type f -name "*" -exec ln -sf {} . \; 2>/dev/null
 cd "$BASE_DIR/public/css" && find ../../node_modules/ng_client/css -type f -name "*" -exec ln -sf {} . \; 2>/dev/null
+# material-icons.css references its fonts as "css/<font>", relative to itself,
+# so a copy must also exist one level deeper for those url() paths to resolve.
+cd "$BASE_DIR/public/css/css" && find ../../../node_modules/ng_client/css -maxdepth 1 -type f \( -name "*.woff2" -o -name "*.woff" -o -name "*.ttf" -o -name "*.eot" -o -name "*.svg" \) -exec ln -sf {} . \; 2>/dev/null
 cd "$BASE_DIR/public/img" && find ../../node_modules/ng_client/img -type f -name "*" -exec ln -sf {} . \; 2>/dev/null
 cd "$BASE_DIR/public/js" && find ../../node_modules/ng_client/po -type f -name "translations.js" -exec ln -sf {} . \; 2>/dev/null
 
