@@ -1,6 +1,8 @@
 #!/bin/bash
 BASE_DIR=$(pwd)
 
+mkdir -p "$BASE_DIR/public/js/anr" "$BASE_DIR/public/css/anr" "$BASE_DIR/public/views/anr" "$BASE_DIR/public/views/dialogs"
+
 echo "Linking ng_anr resources"
 cd "$BASE_DIR/public/js" && find ../../node_modules/ng_anr/src -type f -name "*" -exec ln -sf {} . \; 2>/dev/null
 cd "$BASE_DIR/public/views" && find ../../node_modules/ng_anr/views -type f -name "*" -exec ln -sf {} . \; 2>/dev/null

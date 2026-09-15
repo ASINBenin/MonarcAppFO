@@ -48,6 +48,10 @@
         {
             "type": "vcs",
             "url": "https://github.com/ASINBenin/zm-client.git"
+        },
+        {
+            "type": "vcs",
+            "url": "https://github.com/ASINBenin/zm-sign.git"
         }
     ],
     "require": {
@@ -58,6 +62,7 @@
         "ext-openssl": "*",
         "monarc/frontoffice": "^2.14.1",
         "monarc/core": "^2.14.1",
+        "monarc/sign": "dev-master-asin",
         "laminas/laminas-mvc": "^3.1",
         "laminas/laminas-di": "^3.1",
         "laminas/laminas-permissions-rbac": "^3.0",

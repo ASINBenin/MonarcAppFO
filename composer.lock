@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "b0163b92fbc92a9dbe0e68042cce747c",
+    "content-hash": "eebcdd0105d7ca0f3e6a553f25324626",
     "packages": [
         {
             "name": "bacon/bacon-qr-code",
@@ -5462,6 +5462,36 @@
             "time": "2026-08-18T10:54:20+00:00"
         },
         {
+            "name": "monarc/sign",
+            "version": "dev-master-asin",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/ASINBenin/zm-sign.git",
+                "reference": "98e3bca063ffbb148ec2557c2a51ff3f26123455"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/ASINBenin/zm-sign/zipball/98e3bca063ffbb148ec2557c2a51ff3f26123455",
+                "reference": "98e3bca063ffbb148ec2557c2a51ff3f26123455",
+                "shasum": ""
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Monarc\\Sign\\": "src/"
+                }
+            },
+            "license": [
+                "AGPL-3.0-or-later"
+            ],
+            "description": "Electronic signature module for MONARC",
+            "support": {
+                "source": "https://github.com/ASINBenin/zm-sign/tree/dev-dani",
+                "issues": "https://github.com/ASINBenin/zm-sign/issues"
+            },
+            "time": "2026-09-13T13:25:11+00:00"
+        },
+        {
             "name": "nikic/php-parser",
             "version": "v5.8.0",
             "source": {
@@ -10902,6 +10932,7 @@
     "aliases": [],
     "minimum-stability": "dev",
     "stability-flags": {
+        "monarc/sign": 20,
         "roave/security-advisories": 20
     },
     "prefer-stable": true,
