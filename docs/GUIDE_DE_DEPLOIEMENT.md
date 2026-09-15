@@ -65,24 +65,29 @@ cd MonarcAppFO
 git checkout master-asin
 ```
 
-### Étape 2 — Préparer la base de données (native, pas conteneurisée)
-```bash
-export DBPASSWORD_ADMIN="un_mot_de_passe_root_solide"
-export DBPASSWORD_MONARC="un_mot_de_passe_applicatif_solide"
-bash scripts/ensure_mariadb.sh
-```
-Ce script installe MariaDB si absent, crée les bases `monarc_common`/`monarc_cli` et l'utilisateur applicatif. Voir §4 pour pourquoi la base n'est volontairement pas dans un conteneur.
-
-### Étape 3 — Configurer les secrets
+### Étape 2 — Configurer les secrets
 ```bash
 cp .env.prod.example .env
 ```
 Édite `.env` et remplace chaque `CHANGEME` :
 - `DOMAIN_FO` : le vrai nom de domaine public de cette instance (ex: `monarc.tonorganisation.lu`). **Ne pas mettre `localhost` en vraie prod** — Let's Encrypt ne pourra jamais délivrer de certificat pour un nom qui n'est pas publiquement joignable.
 - `ACME_EMAIL` : email pour les notifications Let's Encrypt.
-- `DBHOST`, `DBPASSWORD_MONARC`, `DBPASSWORD_ADMIN` : mêmes valeurs qu'à l'étape 2.
+- `DBHOST`, `DBPASSWORD_MONARC`, `DBPASSWORD_ADMIN` : mots de passe de ton choix (utilisés à l'étape suivante).
 - `MONARC_SSO_ENCRYPTION_KEY` : générer avec `openssl rand -base64 32`.
 - `TRUSTEDX_URL`, `TRUSTEDX_CLIENT_ID`, `TRUSTEDX_CLIENT_SECRET` : les vraies valeurs de prod fournies par TrustedX (pas les valeurs de test du guide de démarrage).
+
+### Étape 3 — Préparer la base de données (native, pas conteneurisée)
+```bash
+set -a; source .env; set +a
+bash scripts/ensure_mariadb.sh
+```
+`set -a; source .env` charge les valeurs de `.env` (dont `DBPASSWORD_ADMIN`/`DBPASSWORD_MONARC`) comme variables d'environnement, pour que le script utilise **exactement** ce que tu as mis à l'étape 2 — pas de mot de passe à retaper une seconde fois, donc pas de risque de désynchronisation entre `.env` et la vraie base. Le script installe MariaDB si absent, crée les bases `monarc_common`/`monarc_cli` et l'utilisateur applicatif. Voir §4 pour pourquoi la base n'est volontairement pas dans un conteneur.
+
+> **En local sur Windows** (test avant la VM) : ce script ne fonctionne pas tel quel (il utilise `apt`/`systemctl`/`sudo`, absents de Windows/Git Bash). Utilise `scripts/ensure_mariadb_windows.ps1` à la place (nécessite WAMP démarré), depuis **PowerShell** :
+> ```powershell
+> Get-Content .env | ForEach-Object { if ($_ -match '^([^#][^=]*)=(.*)$') { Set-Item "env:$($matches[1])" $matches[2] } }
+> .\scripts\ensure_mariadb_windows.ps1
+> ```
 
 ### Étape 4 — Lancer
 ```bash
