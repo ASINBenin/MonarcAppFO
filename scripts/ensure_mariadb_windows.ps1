@@ -1,10 +1,14 @@
-# Équivalent Windows de scripts/ensure_mariadb.sh, pour tester en local avec
-# WAMP (Linux/VM : utiliser ensure_mariadb.sh). Ne fait PAS l'installation —
-# WAMP installe déjà MariaDB — seulement la création des bases et de
-# l'utilisateur applicatif attendus par MONARC. À lancer depuis la racine du
-# projet (mêmes variables que le fichier .env), avant
-# "docker compose -f docker-compose.prod.yml up -d". Nécessite que WAMP
-# tourne (icône WAMP verte).
+# Equivalent Windows de scripts/ensure_mariadb.sh, pour tester en local avec
+# WAMP (Linux/VM : utiliser ensure_mariadb.sh). Ne fait PAS l'installation -
+# WAMP installe deja MariaDB - seulement la creation des bases et de
+# l'utilisateur applicatif attendus par MONARC. A lancer depuis la racine du
+# projet (memes variables que le fichier .env), avant
+# "docker compose -f docker-compose.prod.yml up -d". Necessite que WAMP
+# tourne (icone WAMP verte).
+#
+# Usage : charge d'abord ton .env dans l'environnement, puis lance ce script :
+#   Get-Content .env | ForEach-Object { if ($_ -match '^([^#][^=]*)=(.*)$') { Set-Item "env:$($matches[1])" $matches[2] } }
+#   .\scripts\ensure_mariadb_windows.ps1
 param(
     [string]$DBNameCommon = $env:DBNAME_COMMON,
     [string]$DBNameCli = $env:DBNAME_CLI,
@@ -18,16 +22,18 @@ $ErrorActionPreference = "Stop"
 if (-not $DBNameCommon) { $DBNameCommon = "monarc_common" }
 if (-not $DBNameCli) { $DBNameCli = "monarc_cli" }
 if (-not $DBUserMonarc) { $DBUserMonarc = "monarc_prod" }
-if (-not $DBPasswordMonarc) { throw "DBPASSWORD_MONARC requis (mot de passe applicatif) — charge ton .env d'abord, ex: Get-Content .env | ForEach-Object { if (`$_ -match '^([^#][^=]*)=(.*)`$') { Set-Item \"env:`$(`$matches[1])\" `$matches[2] } }" }
+if (-not $DBPasswordMonarc) {
+    throw "DBPASSWORD_MONARC requis (mot de passe applicatif). Charge ton .env d'abord (voir l'usage en tete de ce script)."
+}
 
 $mysqlExe = Get-ChildItem "C:\wamp64\bin\mariadb\*\bin\mysql.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
 if (-not $mysqlExe) {
-    throw "mysql.exe introuvable sous C:\wamp64\bin\mariadb\*\bin — WAMP est-il installé à cet emplacement ? Adapte le chemin dans ce script sinon."
+    throw "mysql.exe introuvable sous C:\wamp64\bin\mariadb\*\bin - WAMP est-il installe a cet emplacement ? Adapte le chemin dans ce script sinon."
 }
 
 Write-Output "Utilisation de $($mysqlExe.FullName)"
 
-# Mot de passe root WAMP par défaut : vide. Si tu l'as changé, passe -DBPasswordAdmin.
+# Mot de passe root WAMP par defaut : vide. Si tu l'as change, passe -DBPasswordAdmin.
 $rootAuthArgs = @("-u", "root")
 if ($DBPasswordAdmin) { $rootAuthArgs += "-p$DBPasswordAdmin" }
 
@@ -40,8 +46,8 @@ GRANT ALL PRIVILEGES ON $DBNameCli.* TO '$DBUserMonarc'@'%';
 FLUSH PRIVILEGES;
 "@
 
-Write-Output "Vérification/création des bases et de l'utilisateur applicatif..."
+Write-Output "Verification/creation des bases et de l'utilisateur applicatif..."
 $sql | & $mysqlExe.FullName @rootAuthArgs
 
-Write-Output "MariaDB (WAMP) prêt : bases '$DBNameCommon' et '$DBNameCli', utilisateur '$DBUserMonarc'."
-Write-Output "Note : le conteneur applicatif s'y connecte via host.docker.internal (voir DBHOST dans .env) — le '@%%' ci-dessus (au lieu de '@localhost') est ce qui l'autorise."
+Write-Output "MariaDB (WAMP) pret : bases '$DBNameCommon' et '$DBNameCli', utilisateur '$DBUserMonarc'."
+Write-Output "Note : le conteneur applicatif s'y connecte via host.docker.internal (voir DBHOST dans .env) - le utilisateur cree sur '%' (au lieu de 'localhost') est ce qui l'autorise depuis l'exterieur de WAMP."
