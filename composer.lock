@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "eebcdd0105d7ca0f3e6a553f25324626",
+    "content-hash": "8625a0e48e7913eb9e5ef94354fe2492",
     "packages": [
         {
             "name": "bacon/bacon-qr-code",
@@ -5268,16 +5268,16 @@
         },
         {
             "name": "monarc/core",
-            "version": "v2.14.1",
+            "version": "dev-master-asin",
             "source": {
                 "type": "git",
-                "url": "https://github.com/monarc-project/zm-core.git",
-                "reference": "0069680390bc0a919ef3edb7c73191a0aacd4aae"
+                "url": "https://github.com/ASINBenin/zm-core.git",
+                "reference": "235915ddf3e78e4ff7845bd7f0b70cb0e4a5ad4f"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/monarc-project/zm-core/zipball/0069680390bc0a919ef3edb7c73191a0aacd4aae",
-                "reference": "0069680390bc0a919ef3edb7c73191a0aacd4aae",
+                "url": "https://api.github.com/repos/ASINBenin/zm-core/zipball/235915ddf3e78e4ff7845bd7f0b70cb0e4a5ad4f",
+                "reference": "235915ddf3e78e4ff7845bd7f0b70cb0e4a5ad4f",
                 "shasum": ""
             },
             "require": {
@@ -5313,7 +5313,11 @@
                     "Monarc\\Core\\": "src/"
                 }
             },
-            "notification-url": "https://packagist.org/downloads/",
+            "scripts": {
+                "tests": [
+                    "vendor/bin/phpunit"
+                ]
+            },
             "license": [
                 "AGPL-3.0-or-later"
             ],
@@ -5357,23 +5361,22 @@
             ],
             "description": "Core for monarc/monarc application",
             "support": {
-                "issues": "https://github.com/monarc-project/zm-core/issues",
-                "source": "https://github.com/monarc-project/zm-core/tree/v2.14.1"
+                "source": "https://github.com/ASINBenin/zm-core/tree/dev-dani"
             },
-            "time": "2026-08-14T15:50:31+00:00"
+            "time": "2026-09-13T13:24:23+00:00"
         },
         {
             "name": "monarc/frontoffice",
-            "version": "v2.14.1.2",
+            "version": "dev-master-asin",
             "source": {
                 "type": "git",
-                "url": "https://github.com/monarc-project/zm-client.git",
-                "reference": "64535028bc8609f8b5e379a93de783053e8f6f48"
+                "url": "https://github.com/ASINBenin/zm-client.git",
+                "reference": "5942ba72ea22348d34d0dfa11118247811ba4188"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/monarc-project/zm-client/zipball/64535028bc8609f8b5e379a93de783053e8f6f48",
-                "reference": "64535028bc8609f8b5e379a93de783053e8f6f48",
+                "url": "https://api.github.com/repos/ASINBenin/zm-client/zipball/5942ba72ea22348d34d0dfa11118247811ba4188",
+                "reference": "5942ba72ea22348d34d0dfa11118247811ba4188",
                 "shasum": ""
             },
             "require": {
@@ -5412,7 +5415,11 @@
                     "Monarc\\FrontOffice\\": "src/"
                 }
             },
-            "notification-url": "https://packagist.org/downloads/",
+            "scripts": {
+                "phpcs": [
+                    "phpcs --standard=PSR2 src/"
+                ]
+            },
             "license": [
                 "AGPL-3.0-or-later"
             ],
@@ -5456,10 +5463,9 @@
             ],
             "description": "Frontoffice for monarc/monarc application",
             "support": {
-                "issues": "https://github.com/monarc-project/zm-client/issues",
-                "source": "https://github.com/monarc-project/zm-client/tree/v2.14.1.2"
+                "source": "https://github.com/ASINBenin/zm-client/tree/dev-dani"
             },
-            "time": "2026-08-18T10:54:20+00:00"
+            "time": "2026-09-13T13:24:44+00:00"
         },
         {
             "name": "monarc/sign",
@@ -10929,9 +10935,18 @@
             "time": "2025-11-17T20:03:58+00:00"
         }
     ],
-    "aliases": [],
+    "aliases": [
+        {
+            "package": "monarc/core",
+            "version": "dev-master-asin",
+            "alias": "2.14.1",
+            "alias_normalized": "2.14.1.0"
+        }
+    ],
     "minimum-stability": "dev",
     "stability-flags": {
+        "monarc/core": 20,
+        "monarc/frontoffice": 20,
         "monarc/sign": 20,
         "roave/security-advisories": 20
     },
@@ -10945,5 +10960,16 @@
         "ext-openssl": "*"
     },
     "platform-dev": {},
+    "platform-overrides": {
+        "php": "8.1.34",
+        "ext-imagick": "1.0.0",
+        "ext-gettext": "1.0.0",
+        "ext-intl": "1.0.0",
+        "ext-posix": "1.0.0",
+        "ext-gd": "1.0.0",
+        "ext-mbstring": "1.0.0",
+        "ext-curl": "1.0.0",
+        "ext-xml": "1.0.0"
+    },
     "plugin-api-version": "2.9.0"
 }
