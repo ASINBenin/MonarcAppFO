@@ -4,7 +4,7 @@ BASE_DIR=$(pwd)
 mkdir -p "$BASE_DIR/public/js/anr" "$BASE_DIR/public/css/anr" "$BASE_DIR/public/views/anr" "$BASE_DIR/public/views/dialogs"
 
 echo "Linking ng_anr resources"
-cd "$BASE_DIR/public/js" && find ../../node_modules/ng_anr/src -type f -name "*" -exec ln -sf {} . \; 2>/dev/null
+cd "$BASE_DIR/public/js/anr" && find ../../../node_modules/ng_anr/src -type f -name "*" -exec ln -sf {} . \; 2>/dev/null
 cd "$BASE_DIR/public/views/anr" && find ../../../node_modules/ng_anr/views -maxdepth 1 -type f -name "*" -exec ln -sf {} . \; 2>/dev/null
 cd "$BASE_DIR/public/css" && find ../../node_modules/ng_anr/css -type f -name "*" -exec ln -sf {} . \; 2>/dev/null
 cd "$BASE_DIR/public/css/anr" && find ../../../node_modules/ng_anr/css -type f -maxdepth 1 -name "*" -exec ln -sf {} . \; 2>/dev/null
