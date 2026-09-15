@@ -7,11 +7,16 @@
 > ⚠️ **État de validation honnête** : l'application elle-même (image, base de
 > données, migrations, page de login) a été testée avec succès. **Le conteneur
 > Traefik (reverse proxy HTTPS) n'a en revanche jamais fonctionné correctement
-> lors des tests** — il échouait à lire le socket Docker (`Failed to retrieve
-> information of the docker client`), un souci probablement spécifique à Docker
-> Desktop sur Windows, jamais reproduit/résolu sur un vrai Linux. **Sur la VM,
-> vérifie Traefik en premier (§3, étape 5) avant de supposer que tout marche.**
-> Un plan B sans Traefik est donné en §6 si besoin.
+> lors des tests.** Diagnostic précis obtenu (voir §6) : le socket Docker
+> fonctionne parfaitement (confirmé avec `curl --unix-socket`), mais Traefik
+> reçoit systématiquement `API returned a 400 (Bad Request)` — un souci de
+> **négociation de version d'API Docker**, le poste de test tournant sur un
+> Docker Engine 29.6.1 (API 1.55) inhabituellement récent pour une CLI Traefik
+> v3.1/v3.5. **Sur la VM, vérifie Traefik en premier (§3, étape 5)** — une VM
+> Linux standard aura très probablement une version de Docker plus classique,
+> donc ce problème précis a de bonnes chances de ne pas se reproduire. S'il
+> revient, la solution (§6) est de fixer `DOCKER_API_VERSION` ou d'utiliser une
+> version de Docker Engine plus proche de ce que Traefik attend.
 
 ---
 
@@ -132,15 +137,29 @@ Ces correctifs sont dans l'historique Git de `master-asin` ; ils expliquent pour
 
 ## 6. Dépannage
 
-**Traefik ne démarre pas / boucle sur `Failed to retrieve information of the docker client`** →
-c'est le souci non résolu mentionné en haut de ce guide. Vérifie d'abord :
-```bash
-docker logs monarc-traefik
-```
-Si ça persiste sur la VM Linux (peu probable, mais pas exclu) :
-1. Vérifie que `/var/run/docker.sock` existe bien et est accessible : `ls -la /var/run/docker.sock`.
-2. Vérifie que l'utilisateur qui lance `docker compose` a les droits dessus (généralement il faut être dans le groupe `docker`).
-3. **Plan B temporaire** — contourner Traefik pour valider que l'appli elle-même fonctionne, en exposant son port directement (HTTP simple, sans HTTPS) :
+**Traefik boucle sur `Failed to retrieve information of the docker client`** →
+Diagnostic étape par étape :
+
+1. **Vérifier que le socket lui-même fonctionne** (élimine un problème de permissions/montage) :
+   ```bash
+   docker run --rm --user root -v /var/run/docker.sock:/var/run/docker.sock \
+     curlimages/curl -s --unix-socket /var/run/docker.sock http://localhost/version
+   ```
+   Si ça répond avec un JSON contenant `"ApiVersion"` → le socket est sain, le problème est spécifique au client Docker intégré à Traefik (continuer ci-dessous). Si ça échoue déjà ici → problème de droits (`ls -la /var/run/docker.sock`, vérifier que l'utilisateur est dans le groupe `docker`).
+
+2. **Regarder le message d'erreur précis** :
+   ```bash
+   docker logs monarc-traefik
+   ```
+   - Si tu vois `API returned a 400 (Bad Request) but provided no error-message` → c'est un problème de **négociation de version d'API Docker** (exactement ce qu'on a rencontré en test). Fixe la version explicitement dans `docker-compose.prod.yml`, service `traefik` :
+     ```yaml
+     environment:
+       - DOCKER_API_VERSION=1.44   # adapte à la sortie de: docker version --format '{{.Server.APIVersion}}'
+     ```
+     Si ça ne suffit pas, essaie une version de Traefik plus récente (`traefik:v3.5` ou plus) — son client Docker interne est mis à jour plus souvent.
+   - Si tu vois autre chose (permission denied, connection refused...) → problème de montage/droits, voir point 1.
+
+3. **Plan B temporaire** — contourner Traefik pour au moins valider que l'appli elle-même fonctionne, en l'exposant directement (HTTP simple, sans HTTPS), pendant que tu débogues Traefik en parallèle :
    ```bash
    docker compose -f docker-compose.prod.yml up -d monarcfoapp
    # ajouter un port directement sur le service le temps de diagnostiquer :
