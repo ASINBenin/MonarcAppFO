@@ -4,6 +4,15 @@
 > **Organisation GitHub :** [ASINBenin](https://github.com/ASINBenin)
 > **Image Docker :** `ghcr.io/asinbenin/monarcappfo:master-asin`
 
+> ⚠️ **État de validation honnête** : l'application elle-même (image, base de
+> données, migrations, page de login) a été testée avec succès. **Le conteneur
+> Traefik (reverse proxy HTTPS) n'a en revanche jamais fonctionné correctement
+> lors des tests** — il échouait à lire le socket Docker (`Failed to retrieve
+> information of the docker client`), un souci probablement spécifique à Docker
+> Desktop sur Windows, jamais reproduit/résolu sur un vrai Linux. **Sur la VM,
+> vérifie Traefik en premier (§3, étape 5) avant de supposer que tout marche.**
+> Un plan B sans Traefik est donné en §6 si besoin.
+
 ---
 
 ## 📌 Table des matières
@@ -122,6 +131,23 @@ Ces correctifs sont dans l'historique Git de `master-asin` ; ils expliquent pour
 ---
 
 ## 6. Dépannage
+
+**Traefik ne démarre pas / boucle sur `Failed to retrieve information of the docker client`** →
+c'est le souci non résolu mentionné en haut de ce guide. Vérifie d'abord :
+```bash
+docker logs monarc-traefik
+```
+Si ça persiste sur la VM Linux (peu probable, mais pas exclu) :
+1. Vérifie que `/var/run/docker.sock` existe bien et est accessible : `ls -la /var/run/docker.sock`.
+2. Vérifie que l'utilisateur qui lance `docker compose` a les droits dessus (généralement il faut être dans le groupe `docker`).
+3. **Plan B temporaire** — contourner Traefik pour valider que l'appli elle-même fonctionne, en exposant son port directement (HTTP simple, sans HTTPS) :
+   ```bash
+   docker compose -f docker-compose.prod.yml up -d monarcfoapp
+   # ajouter un port directement sur le service le temps de diagnostiquer :
+   # via un fichier override docker-compose.override.yml avec "ports: - '8090:80'"
+   curl -I http://localhost:8090/
+   ```
+   Ça permet de confirmer que le problème vient bien de Traefik et pas de l'appli, avant de creuser plus loin.
 
 **`unauthorized` au `docker pull`** → le paquet GHCR n'est pas public. Voir §2.
 
