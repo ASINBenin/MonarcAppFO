@@ -11,7 +11,7 @@ echo -e "${GREEN}Starting MONARC FrontOffice setup...${NC}"
 
 # Wait for database to be ready
 echo -e "${YELLOW}Waiting for MariaDB to be ready...${NC}"
-while ! mysqladmin ping -h"${DBHOST}" -u"root" -p"${DBPASSWORD_ADMIN}" --silent 2>/dev/null; do
+while ! mysqladmin ping -h"${DBHOST}" -u"${DBUSER_MONARC}" -p"${DBPASSWORD_MONARC}" --silent 2>/dev/null; do
     echo "Waiting for MariaDB..."
     sleep 2
 done
@@ -82,7 +82,7 @@ if [ ! -f "/var/www/html/monarc/.docker-initialized" ]; then
 
     # Check if CLI database exists and create databases if needed
     echo -e "${YELLOW}Setting up databases...${NC}"
-    DB_EXISTS=$(mysql -h"${DBHOST}" -u"root" -p"${DBPASSWORD_ADMIN}" -e "SHOW DATABASES LIKE '${DBNAME_CLI}';" | grep -c "${DBNAME_CLI}" || true)
+    DB_EXISTS=$(mysql -h"${DBHOST}" -u"${DBUSER_MONARC}" -p"${DBPASSWORD_MONARC}" -e "SHOW DATABASES LIKE '${DBNAME_CLI}';" | grep -c "${DBNAME_CLI}" || true)
     USE_BO_COMMON_ENABLED=0
     if is_true "${USE_BO_COMMON}"; then
         USE_BO_COMMON_ENABLED=1
@@ -90,10 +90,10 @@ if [ ! -f "/var/www/html/monarc/.docker-initialized" ]; then
 
     if [ "$DB_EXISTS" -eq 0 ]; then
         echo -e "${YELLOW}Creating databases...${NC}"
-        mysql -h"${DBHOST}" -u"root" -p"${DBPASSWORD_ADMIN}" -e "CREATE DATABASE IF NOT EXISTS ${DBNAME_CLI} DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci;"
+        mysql -h"${DBHOST}" -u"${DBUSER_MONARC}" -p"${DBPASSWORD_MONARC}" -e "CREATE DATABASE IF NOT EXISTS ${DBNAME_CLI} DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci;"
 
         if [ "$USE_BO_COMMON_ENABLED" -eq 0 ]; then
-            mysql -h"${DBHOST}" -u"root" -p"${DBPASSWORD_ADMIN}" -e "CREATE DATABASE IF NOT EXISTS ${DBNAME_COMMON} DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci;"
+            mysql -h"${DBHOST}" -u"${DBUSER_MONARC}" -p"${DBPASSWORD_MONARC}" -e "CREATE DATABASE IF NOT EXISTS ${DBNAME_COMMON} DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci;"
 
             echo -e "${YELLOW}Populating common database...${NC}"
             export MYSQL_PWD="${DBPASSWORD_MONARC}"
@@ -105,14 +105,14 @@ if [ ! -f "/var/www/html/monarc/.docker-initialized" ]; then
     fi
 
     echo -e "${YELLOW}Ensuring privileges for ${DBUSER_MONARC}...${NC}"
-    mysql -h"${DBHOST}" -u"root" -p"${DBPASSWORD_ADMIN}" -e "GRANT ALL PRIVILEGES ON ${DBNAME_CLI}.* TO '${DBUSER_MONARC}'@'%';"
+    mysql -h"${DBHOST}" -u"${DBUSER_MONARC}" -p"${DBPASSWORD_MONARC}" -e "GRANT ALL PRIVILEGES ON ${DBNAME_CLI}.* TO '${DBUSER_MONARC}'@'%';"
     if [ "$USE_BO_COMMON_ENABLED" -eq 0 ]; then
-        mysql -h"${DBHOST}" -u"root" -p"${DBPASSWORD_ADMIN}" -e "GRANT ALL PRIVILEGES ON ${DBNAME_COMMON}.* TO '${DBUSER_MONARC}'@'%';"
+        mysql -h"${DBHOST}" -u"${DBUSER_MONARC}" -p"${DBPASSWORD_MONARC}" -e "GRANT ALL PRIVILEGES ON ${DBNAME_COMMON}.* TO '${DBUSER_MONARC}'@'%';"
     fi
-    mysql -h"${DBHOST}" -u"root" -p"${DBPASSWORD_ADMIN}" -e "FLUSH PRIVILEGES;"
+    mysql -h"${DBHOST}" -u"${DBUSER_MONARC}" -p"${DBPASSWORD_MONARC}" -e "FLUSH PRIVILEGES;"
 
     if [ "$USE_BO_COMMON_ENABLED" -eq 1 ]; then
-        COMMON_EXISTS=$(mysql -h"${DBHOST}" -u"root" -p"${DBPASSWORD_ADMIN}" -e "SHOW DATABASES LIKE '${DBNAME_COMMON}';" | grep -c "${DBNAME_COMMON}" || true)
+        COMMON_EXISTS=$(mysql -h"${DBHOST}" -u"${DBUSER_MONARC}" -p"${DBPASSWORD_MONARC}" -e "SHOW DATABASES LIKE '${DBNAME_COMMON}';" | grep -c "${DBNAME_COMMON}" || true)
         if [ "$COMMON_EXISTS" -eq 0 ]; then
             echo -e "${RED}USE_BO_COMMON is enabled, but ${DBNAME_COMMON} was not found on ${DBHOST}.${NC}"
             echo -e "${RED}Ensure the BackOffice database is reachable and contains ${DBNAME_COMMON}.${NC}"
