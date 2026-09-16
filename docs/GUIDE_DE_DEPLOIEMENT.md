@@ -75,6 +75,7 @@ cp .env.prod.example .env
 - `DBHOST`, `DBPASSWORD_MONARC`, `DBPASSWORD_ADMIN` : mots de passe de ton choix (utilisés à l'étape suivante).
 - `MONARC_SSO_ENCRYPTION_KEY` : générer avec `openssl rand -base64 32`.
 - `TRUSTEDX_URL`, `TRUSTEDX_CLIENT_ID`, `TRUSTEDX_CLIENT_SECRET` : les vraies valeurs de prod fournies par TrustedX (pas les valeurs de test du guide de démarrage).
+- `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD` : pour l'envoi de mail (ex: Gmail = `smtp.gmail.com`/`587` + un mot de passe d'application, pas le mot de passe du compte). Laisse vide pour désactiver l'envoi de mail.
 
 ### Étape 3 — Préparer la base de données (native, pas conteneurisée)
 ```bash

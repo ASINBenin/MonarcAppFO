@@ -120,6 +120,23 @@ if [ ! -f "/var/www/html/monarc/.docker-initialized" ]; then
         fi
     fi
 
+    # Emit smtpOptions only if SMTP_HOST is set (empty array still passes !empty()).
+    SMTP_CONFIG_BLOCK=""
+    if [ -n "${SMTP_HOST:-}" ]; then
+        SMTP_CONFIG_BLOCK="
+    'smtpOptions' => [
+        'name'              => '${DOMAIN_FO:-localhost}',
+        'host'              => '${SMTP_HOST}',
+        'port'              => ${SMTP_PORT:-587},
+        'connection_class'  => 'login',
+        'connection_config' => [
+            'username' => '${SMTP_USER}',
+            'password' => '${SMTP_PASSWORD}',
+            'ssl'      => 'tls',
+        ],
+    ],"
+    fi
+
     # Generate local config (always override to match container DB)
     echo -e "${YELLOW}Creating local configuration...${NC}"
     cat > config/autoload/local.php <<EOF
@@ -175,6 +192,7 @@ return [
         'name' => 'MONARC',
         'from' => 'info@monarc.lu',
     ],
+${SMTP_CONFIG_BLOCK}
 
     'mospApiUrl' => 'https://objects.monarc.lu/api/',
 
