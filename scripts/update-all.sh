@@ -83,7 +83,9 @@ if [[ ! -f "config/autoload/local.php" && $bypass -eq 0 ]]; then
 fi
 
 if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-    git pull || { echo "A problem occurred while retrieving remote files from repository."; exit 1; }
+    # git pull || { echo "A problem occurred while retrieving remote files from repository."; exit 1; }
+    git pull origin master || echo "Git pull skipped for local dev branch."
+
 else
     echo "No .git metadata; skipping git pull."
 fi
@@ -119,8 +121,9 @@ fi
 
 if [[ -d node_modules/ng_client && -d node_modules/ng_anr ]]; then
     if [[ -d node_modules/ng_client/.git && -d node_modules/ng_anr/.git ]]; then
-        checkout_to_ref_if_set_or_latest_tag node_modules/ng_client "$frontendRef"
-        checkout_to_ref_if_set_or_latest_tag node_modules/ng_anr "$frontendRef"
+        # checkout_to_ref_if_set_or_latest_tag node_modules/ng_client "$frontendRef"
+        # checkout_to_ref_if_set_or_latest_tag node_modules/ng_anr "$frontendRef"
+        echo "Utilisation des modules frontend locaux / ASINBenin."
     else
         echo "node_modules/ng_* are not git repos; skipping frontend repository update."
     fi

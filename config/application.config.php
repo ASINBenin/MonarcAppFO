@@ -34,6 +34,7 @@ return [
         'Laminas\Log',
         'Monarc\Core',
         'Monarc\FrontOffice',
+        'Monarc\Sign',
         'Laminas\Cache',
         'Laminas\Form',
         'Laminas\InputFilter',
@@ -50,7 +51,7 @@ return [
     'module_listener_options' => [
         'module_paths' => [
             './module',
-            './vendor'
+            './vendor',
         ],
         'config_glob_paths' => $confPaths,
         'config_cache_enabled' => $env === 'production',
