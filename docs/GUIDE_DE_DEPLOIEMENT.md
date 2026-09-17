@@ -9,7 +9,7 @@
 > — routage par nom d'hôte via les labels Docker confirmé (redirection
 > HTTP→HTTPS 302 fonctionnelle). Seul le HTTPS/Let's Encrypt lui-même n'a pas
 > pu être testé localement (il faut un vrai domaine public joignable) — teste-le
-> en premier sur la VM (§3, étape 5).
+> en premier sur la VM (§3, étape 6).
 >
 > **Détail du bug Traefik rencontré et corrigé** : sur Docker Engine ≥ 29 (API
 > 1.55, très récent), le client Docker embarqué dans Traefik v3.1/v3.5 échoue
@@ -90,12 +90,19 @@ bash scripts/ensure_mariadb.sh
 > .\scripts\ensure_mariadb_windows.ps1
 > ```
 
-### Étape 4 — Lancer
+### Étape 4 — S'authentifier auprès de GHCR (paquet privé)
+Le paquet `ghcr.io/asinbenin/monarcappfo` est **privé** — un `docker pull` anonyme échoue avec `denied`. Connecte-toi une seule fois sur la VM avec un [Personal Access Token GitHub](https://github.com/settings/tokens) ayant le scope `read:packages` :
+```bash
+echo "TON_TOKEN" | docker login ghcr.io -u TON_USERNAME_GITHUB --password-stdin
+```
+Les identifiants restent enregistrés (`~/.docker/config.json`) — inutile de refaire cette étape aux déploiements suivants sur la même VM. Ne mets jamais ce token dans `.env` ni dans un fichier versionné.
+
+### Étape 5 — Lancer
 ```bash
 docker compose -f docker-compose.prod.yml up -d
 ```
 
-### Étape 5 — Vérifier
+### Étape 6 — Vérifier
 ```bash
 docker compose -f docker-compose.prod.yml logs -f monarcfoapp
 ```
