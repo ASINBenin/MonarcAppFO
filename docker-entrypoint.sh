@@ -59,11 +59,11 @@ if [ ! -f "/var/www/html/monarc/.docker-initialized" ]; then
     cd node_modules
 
     if [ ! -d "ng_client" ]; then
-        git clone --config core.fileMode=false https://github.com/ASINBenin/ng-client.git ng_client
+        git clone --config core.fileMode=false -b master-asin https://github.com/ASINBenin/ng-client.git ng_client
     fi
 
     if [ ! -d "ng_anr" ]; then
-        git clone --config core.fileMode=false https://github.com/ASINBenin/ng-anr.git ng_anr
+        git clone --config core.fileMode=false -b master-asin https://github.com/ASINBenin/ng-anr.git ng_anr
     fi
 
     cd /var/www/html/monarc
