@@ -39,19 +39,10 @@ if [ ! -f "/var/www/html/monarc/.docker-initialized" ]; then
     echo -e "${YELLOW}Installing Composer dependencies...${NC}"
     composer install --ignore-platform-req=php --no-interaction
 
-    if [ -d "module/Monarc/FrontOffice" ]; then
-        cp -rf module/Monarc/FrontOffice/* vendor/monarc/frontoffice/ 2>/dev/null || true
-    fi
-    if [ -d "module/Monarc/Core" ]; then
-        cp -rf module/Monarc/Core/* vendor/monarc/core/ 2>/dev/null || true
-    fi
-
     # Create module symlinks
     echo -e "${YELLOW}Creating module symlinks...${NC}"
     mkdir -p module/Monarc
     cd module/Monarc
-    # ln -sfn ./../../vendor/monarc/core Core
-    # ln -sfn ./../../vendor/monarc/frontoffice FrontOffice
 
     if [ ! -d "Core" ] && [ ! -L "Core" ]; then
         ln -sfn ./../../vendor/monarc/core Core
@@ -67,9 +58,6 @@ if [ ! -f "/var/www/html/monarc/.docker-initialized" ]; then
     mkdir -p node_modules
     cd node_modules
 
-    ln -sfn /var/www/html/ng-client ng_client
-    ln -sfn /var/www/html/ng-anr ng_anr
-
     if [ ! -d "ng_client" ]; then
         git clone --config core.fileMode=false https://github.com/ASINBenin/ng-client.git ng_client
     fi
@@ -80,7 +68,7 @@ if [ ! -f "/var/www/html/monarc/.docker-initialized" ]; then
 
     cd /var/www/html/monarc
 
-    # Check if CLI database exists and create databases if needed
+    # Check if CLI database exists and create it if needed
     echo -e "${YELLOW}Setting up databases...${NC}"
     DB_EXISTS=$(mysql -h"${DBHOST}" -u"${DBUSER_MONARC}" -p"${DBPASSWORD_MONARC}" -e "SHOW DATABASES LIKE '${DBNAME_CLI}';" | grep -c "${DBNAME_CLI}" || true)
     USE_BO_COMMON_ENABLED=0
@@ -89,19 +77,32 @@ if [ ! -f "/var/www/html/monarc/.docker-initialized" ]; then
     fi
 
     if [ "$DB_EXISTS" -eq 0 ]; then
-        echo -e "${YELLOW}Creating databases...${NC}"
+        echo -e "${YELLOW}Creating database ${DBNAME_CLI}...${NC}"
         mysql -h"${DBHOST}" -u"${DBUSER_MONARC}" -p"${DBPASSWORD_MONARC}" -e "CREATE DATABASE IF NOT EXISTS ${DBNAME_CLI} DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci;"
+    fi
 
-        if [ "$USE_BO_COMMON_ENABLED" -eq 0 ]; then
-            mysql -h"${DBHOST}" -u"${DBUSER_MONARC}" -p"${DBPASSWORD_MONARC}" -e "CREATE DATABASE IF NOT EXISTS ${DBNAME_COMMON} DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci;"
+    # Populate monarc_common based on its own state (table count), not DBNAME_CLI's —
+    # a DB-provisioning script (init-mariadb.sh) may have already created it empty
+    # ahead of time, which must not be mistaken for "already populated". A MySQL
+    # advisory lock prevents two entities bootstrapping it at the same time.
+    if [ "$USE_BO_COMMON_ENABLED" -eq 0 ]; then
+        mysql -h"${DBHOST}" -u"${DBUSER_MONARC}" -p"${DBPASSWORD_MONARC}" -e "CREATE DATABASE IF NOT EXISTS ${DBNAME_COMMON} DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci;"
 
+        export MYSQL_PWD="${DBPASSWORD_MONARC}"
+        mysql -h"${DBHOST}" -u"${DBUSER_MONARC}" -e "SELECT GET_LOCK('monarc_common_bootstrap', 60);" >/dev/null
+
+        COMMON_TABLE_COUNT=$(mysql -h"${DBHOST}" -u"${DBUSER_MONARC}" -N -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='${DBNAME_COMMON}';")
+        if [ "$COMMON_TABLE_COUNT" -eq 0 ]; then
             echo -e "${YELLOW}Populating common database...${NC}"
-            export MYSQL_PWD="${DBPASSWORD_MONARC}"
             mysql -h"${DBHOST}" -u"${DBUSER_MONARC}" ${DBNAME_COMMON} < db-bootstrap/monarc_structure.sql
             mysql -h"${DBHOST}" -u"${DBUSER_MONARC}" ${DBNAME_COMMON} < db-bootstrap/monarc_data.sql
         else
-            echo -e "${YELLOW}USE_BO_COMMON is enabled; skipping monarc_common creation and bootstrap.${NC}"
+            echo -e "${YELLOW}Common database already populated, skipping.${NC}"
         fi
+
+        mysql -h"${DBHOST}" -u"${DBUSER_MONARC}" -e "SELECT RELEASE_LOCK('monarc_common_bootstrap');" >/dev/null
+    else
+        echo -e "${YELLOW}USE_BO_COMMON is enabled; skipping monarc_common creation and bootstrap.${NC}"
     fi
 
     echo -e "${YELLOW}Ensuring privileges for ${DBUSER_MONARC}...${NC}"
@@ -118,6 +119,11 @@ if [ ! -f "/var/www/html/monarc/.docker-initialized" ]; then
             echo -e "${RED}Ensure the BackOffice database is reachable and contains ${DBNAME_COMMON}.${NC}"
             exit 1
         fi
+    fi
+
+    # Scope the session cookie to this entity's path prefix, to avoid cross-entity cookie collisions when multiple entities share one domain.
+    if [ -n "${PATH_PREFIX:-}" ]; then
+        echo "session.cookie_path = ${PATH_PREFIX}" > /etc/php/8.1/apache2/conf.d/session-path.ini
     fi
 
     # Emit smtpOptions only if SMTP_HOST is set (empty array still passes !empty()).
