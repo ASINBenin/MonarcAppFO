@@ -9,6 +9,8 @@ services:
       MYSQL_DATABASE: ${DBNAME_COMMON}
       MYSQL_USER: ${DBUSER_MONARC}
       MYSQL_PASSWORD: ${DBPASSWORD_MONARC}
+      # Required by docker/db-init/10-dev-grants.sh, which is skipped when this is unset
+      DBUSER_MONARC: ${DBUSER_MONARC}
     command:
       - --character-set-server=utf8mb4
       - --collation-server=utf8mb4_general_ci
@@ -112,6 +114,8 @@ services:
       TRUSTEDX_CLIENT_ID: ${TRUSTEDX_CLIENT_ID}
       TRUSTEDX_CLIENT_SECRET: ${TRUSTEDX_CLIENT_SECRET}
       MONARC_SSO_ENCRYPTION_KEY: ${MONARC_SSO_ENCRYPTION_KEY}
+      # Signature par clé USB : exiger que le certificat porte le NPI du signataire (true/false)
+      SIGN_LOCAL_NPI_CHECK: ${SIGN_LOCAL_NPI_CHECK:-false}
       APP_ENV: development
       APP_DIR: /var/www/html/monarc
     ports:
@@ -153,6 +157,7 @@ services:
 
       - ../zm-core:/var/www/html/monarc/vendor/monarc/core
       - ../zm-client:/var/www/html/monarc/vendor/monarc/frontoffice
+      - ../zm-sign:/var/www/html/monarc/vendor/monarc/sign
       - ../zm-core:/var/www/html/monarc/module/Monarc/Core
       - ../zm-client:/var/www/html/monarc/module/Monarc/FrontOffice
       - ../zm-sign:/var/www/html/monarc/module/Monarc/Sign

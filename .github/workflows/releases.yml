@@ -169,21 +169,39 @@ jobs:
         images: ${{ steps.image_names.outputs.app }}
         tags: |
           type=raw,value=${{ github.ref_name }}
+          type=sha,prefix=sha-,format=short
           type=raw,value=latest,enable=${{ !contains(github.ref_name, '-') }}
         labels: |
           org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
           org.opencontainers.image.revision=${{ github.sha }}
 
+    # A version tag reuses the exact image already built and tested for this commit on master-asin
+    # (sha-<commit>), instead of rebuilding it with possibly newer modules.
+    - name: Promote tested app image (tags)
+      id: promote_app
+      if: startsWith(github.ref, 'refs/tags/')
+      run: |
+        src="${{ steps.image_names.outputs.app }}:sha-${GITHUB_SHA::7}"
+        if docker buildx imagetools inspect "$src" >/dev/null 2>&1; then
+          docker buildx imagetools create -t "${{ steps.image_names.outputs.app }}:${GITHUB_REF_NAME}" "$src"
+          echo "Promoted $src as ${GITHUB_REF_NAME}"
+          echo "done=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "No tested image $src found, building it."
+          echo "done=false" >> "$GITHUB_OUTPUT"
+        fi
+
     - name: Build and push app image
-      if: startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/master-asin'
+      if: (startsWith(github.ref, 'refs/tags/') && steps.promote_app.outputs.done != 'true') || github.ref == 'refs/heads/master-asin'
       uses: docker/build-push-action@v6
       with:
         context: ./.docker-release-context
         file: ./.docker-release-context/Dockerfile.release
         build-args: |
           CAPTCHA_ENABLED=true
+          XDEBUG_ENABLED=0
         push: true
-        platforms: linux/amd64,linux/arm64
+        platforms: linux/amd64
         cache-from: type=gha,scope=release-app-image
         cache-to: type=gha,mode=max,scope=release-app-image
         tags: ${{ steps.meta_app.outputs.tags }}
@@ -209,7 +227,7 @@ jobs:
         context: .
         file: ./Dockerfile.stats
         push: true
-        platforms: linux/amd64,linux/arm64
+        platforms: linux/amd64
         cache-from: type=gha,scope=release-stats-image
         cache-to: type=gha,mode=max,scope=release-stats-image
         tags: ${{ steps.meta_stats.outputs.tags }}

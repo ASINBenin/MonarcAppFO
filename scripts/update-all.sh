@@ -84,7 +84,9 @@ fi
 
 if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     # git pull || { echo "A problem occurred while retrieving remote files from repository."; exit 1; }
-    git pull origin master || echo "Git pull skipped for local dev branch."
+    # Disabled: on a dev checkout this merged origin/master into the current branch at first start.
+    # git pull origin master || echo "Git pull skipped for local dev branch."
+    echo "Git pull disabled; update the repository manually."
 
 else
     echo "No .git metadata; skipping git pull."

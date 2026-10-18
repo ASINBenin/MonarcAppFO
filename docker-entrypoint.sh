@@ -24,9 +24,50 @@ is_true() {
     esac
 }
 
+# Serializes the entities that bootstrap and migrate a shared monarc_common (standalone mode).
+# GET_LOCK belongs to the MySQL session, so the session is kept open (coprocess) until the lock is released.
+COMMON_LOCK_HELD=0
+acquire_common_lock() {
+    coproc COMMON_LOCK { MYSQL_PWD="${DBPASSWORD_MONARC}" mysql -h"${DBHOST}" -u"${DBUSER_MONARC}" -N --unbuffered; }
+    echo "SELECT GET_LOCK('monarc_common_bootstrap', 600);" >&"${COMMON_LOCK[1]}"
+    read -r lock_ok <&"${COMMON_LOCK[0]}"
+    if [ "$lock_ok" != "1" ]; then
+        echo -e "${RED}Could not acquire the monarc_common bootstrap lock.${NC}"
+        exit 1
+    fi
+    COMMON_LOCK_HELD=1
+}
+release_common_lock() {
+    if [ "$COMMON_LOCK_HELD" -eq 1 ]; then
+        local pid="$COMMON_LOCK_PID"
+        echo "SELECT RELEASE_LOCK('monarc_common_bootstrap');" >&"${COMMON_LOCK[1]}"
+        read -r _ <&"${COMMON_LOCK[0]}"
+        eval "exec ${COMMON_LOCK[1]}>&-"
+        wait "$pid" 2>/dev/null || true
+        COMMON_LOCK_HELD=0
+    fi
+}
+
 CAPTCHA_ENABLED_PHP=false
 if is_true "${CAPTCHA_ENABLED:-false}"; then
     CAPTCHA_ENABLED_PHP=true
+fi
+
+TWO_FACTOR_AUTH_ENFORCED_PHP=false
+if is_true "${TWO_FACTOR_AUTH_ENFORCED:-false}"; then
+    TWO_FACTOR_AUTH_ENFORCED_PHP=true
+fi
+
+# Development (APP_ENV=development): sources are mounted, dependencies and frontend are built at first start.
+# Any other environment uses the image prebuilt by the CI (vendor, node_modules, public resources): nothing is rebuilt.
+IS_DEV_ENV=0
+if [ "${APP_ENV:-production}" = "development" ]; then
+    IS_DEV_ENV=1
+fi
+if [ "$IS_DEV_ENV" -eq 0 ] && [ ! -f "/var/www/html/monarc/vendor/autoload.php" ]; then
+    echo -e "${RED}APP_ENV=${APP_ENV:-production} but the application is not prebuilt (vendor/autoload.php missing).${NC}"
+    echo -e "${RED}Use an image built by the CI, or set APP_ENV=development to build at startup.${NC}"
+    exit 1
 fi
 
 # Check if this is the first run
@@ -35,48 +76,58 @@ if [ ! -f "/var/www/html/monarc/.docker-initialized" ]; then
 
     cd /var/www/html/monarc
 
-    # Install composer dependencies (always, to ensure binaries like Phinx are present)
-    echo -e "${YELLOW}Installing Composer dependencies...${NC}"
-    composer install --ignore-platform-req=php --no-interaction
+    if [ "$IS_DEV_ENV" -eq 1 ]; then
+        # Install composer dependencies (always, to ensure binaries like Phinx are present)
+        echo -e "${YELLOW}Installing Composer dependencies...${NC}"
+        composer install --ignore-platform-req=php --no-interaction
 
-    if [ -d "module/Monarc/FrontOffice" ]; then
-        cp -rf module/Monarc/FrontOffice/* vendor/monarc/frontoffice/ 2>/dev/null || true
+        if [ -d "module/Monarc/FrontOffice" ] && [ ! -L "module/Monarc/FrontOffice" ]; then
+            cp -rf module/Monarc/FrontOffice/* vendor/monarc/frontoffice/ 2>/dev/null || true
+        fi
+        if [ -d "module/Monarc/Core" ] && [ ! -L "module/Monarc/Core" ]; then
+            cp -rf module/Monarc/Core/* vendor/monarc/core/ 2>/dev/null || true
+        fi
+
+        # Create module symlinks
+        echo -e "${YELLOW}Creating module symlinks...${NC}"
+        mkdir -p module/Monarc
+        cd module/Monarc
+
+        if [ ! -d "Core" ] && [ ! -L "Core" ]; then
+            ln -sfn ./../../vendor/monarc/core Core
+        fi
+        if [ ! -d "FrontOffice" ] && [ ! -L "FrontOffice" ]; then
+            ln -sfn ./../../vendor/monarc/frontoffice FrontOffice
+        fi
+
+        cd /var/www/html/monarc
+
+        # Clone frontend repositories
+        echo -e "${YELLOW}Setting up frontend repositories...${NC}"
+        mkdir -p node_modules
+        cd node_modules
+
+        # Use the sibling repositories when they are mounted and not already mounted in node_modules
+        # (linking over an existing directory would create a stray link inside that repository).
+        if [ ! -e "ng_client" ] && [ -d "/var/www/html/ng-client" ]; then
+            ln -s /var/www/html/ng-client ng_client
+        fi
+        if [ ! -e "ng_anr" ] && [ -d "/var/www/html/ng-anr" ]; then
+            ln -s /var/www/html/ng-anr ng_anr
+        fi
+
+        if [ ! -d "ng_client" ]; then
+            git clone --config core.fileMode=false -b master-asin https://github.com/ASINBenin/ng-client.git ng_client
+        fi
+
+        if [ ! -d "ng_anr" ]; then
+            git clone --config core.fileMode=false -b master-asin https://github.com/ASINBenin/ng-anr.git ng_anr
+        fi
+
+        cd /var/www/html/monarc
+    else
+        echo -e "${YELLOW}Prebuilt image: skipping Composer, frontend clone and build.${NC}"
     fi
-    if [ -d "module/Monarc/Core" ]; then
-        cp -rf module/Monarc/Core/* vendor/monarc/core/ 2>/dev/null || true
-    fi
-
-    # Create module symlinks
-    echo -e "${YELLOW}Creating module symlinks...${NC}"
-    mkdir -p module/Monarc
-    cd module/Monarc
-
-    if [ ! -d "Core" ] && [ ! -L "Core" ]; then
-        ln -sfn ./../../vendor/monarc/core Core
-    fi
-    if [ ! -d "FrontOffice" ] && [ ! -L "FrontOffice" ]; then
-        ln -sfn ./../../vendor/monarc/frontoffice FrontOffice
-    fi
-
-    cd /var/www/html/monarc
-
-    # Clone frontend repositories
-    echo -e "${YELLOW}Setting up frontend repositories...${NC}"
-    mkdir -p node_modules
-    cd node_modules
-
-    ln -sfn /var/www/html/ng-client ng_client
-    ln -sfn /var/www/html/ng-anr ng_anr
-
-    if [ ! -d "ng_client" ]; then
-        git clone --config core.fileMode=false -b master-asin https://github.com/ASINBenin/ng-client.git ng_client
-    fi
-
-    if [ ! -d "ng_anr" ]; then
-        git clone --config core.fileMode=false -b master-asin https://github.com/ASINBenin/ng-anr.git ng_anr
-    fi
-
-    cd /var/www/html/monarc
 
     # Check if CLI database exists and create it if needed
     echo -e "${YELLOW}Setting up databases...${NC}"
@@ -99,7 +150,7 @@ if [ ! -f "/var/www/html/monarc/.docker-initialized" ]; then
         mysql -h"${DBHOST}" -u"${DBUSER_MONARC}" -p"${DBPASSWORD_MONARC}" -e "CREATE DATABASE IF NOT EXISTS ${DBNAME_COMMON} DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci;"
 
         export MYSQL_PWD="${DBPASSWORD_MONARC}"
-        mysql -h"${DBHOST}" -u"${DBUSER_MONARC}" -e "SELECT GET_LOCK('monarc_common_bootstrap', 60);" >/dev/null
+        acquire_common_lock
 
         COMMON_TABLE_COUNT=$(mysql -h"${DBHOST}" -u"${DBUSER_MONARC}" -N -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='${DBNAME_COMMON}';")
         if [ "$COMMON_TABLE_COUNT" -eq 0 ]; then
@@ -110,17 +161,13 @@ if [ ! -f "/var/www/html/monarc/.docker-initialized" ]; then
             echo -e "${YELLOW}Common database already populated, skipping.${NC}"
         fi
 
-        mysql -h"${DBHOST}" -u"${DBUSER_MONARC}" -e "SELECT RELEASE_LOCK('monarc_common_bootstrap');" >/dev/null
+        # The lock stays held until the monarc_common migrations below are done.
     else
         echo -e "${YELLOW}USE_BO_COMMON is enabled; skipping monarc_common creation and bootstrap.${NC}"
     fi
 
-    echo -e "${YELLOW}Ensuring privileges for ${DBUSER_MONARC}...${NC}"
-    mysql -h"${DBHOST}" -u"${DBUSER_MONARC}" -p"${DBPASSWORD_MONARC}" -e "GRANT ALL PRIVILEGES ON ${DBNAME_CLI}.* TO '${DBUSER_MONARC}'@'%';" || true
-    if [ "$USE_BO_COMMON_ENABLED" -eq 0 ]; then
-        mysql -h"${DBHOST}" -u"${DBUSER_MONARC}" -p"${DBPASSWORD_MONARC}" -e "GRANT ALL PRIVILEGES ON ${DBNAME_COMMON}.* TO '${DBUSER_MONARC}'@'%';"  || true
-    fi
-    mysql -h"${DBHOST}" -u"${DBUSER_MONARC}" -p"${DBPASSWORD_MONARC}" -e "FLUSH PRIVILEGES;" || true
+    # Privileges are not granted here: the entity's SQL account receives its rights when it is created
+    # (monarc-deploy/scripts/db/create-entity-dbs.sh, or docker/db-init/10-dev-grants.sh in development).
 
     if [ "$USE_BO_COMMON_ENABLED" -eq 1 ]; then
         COMMON_EXISTS=$(mysql -h"${DBHOST}" -u"${DBUSER_MONARC}" -p"${DBPASSWORD_MONARC}" -e "SHOW DATABASES LIKE '${DBNAME_COMMON}';" | grep -c "${DBNAME_COMMON}" || true)
@@ -204,9 +251,14 @@ return [
     'checkVersion' => false,
     'appCheckingURL' => 'https://version.monarc.lu/check/MONARC',
 
+    // Per-entity settings, as in the official ansible-ubuntu client configuration
+    'instanceName' => '${INSTANCE_NAME:-${DBNAME_CLI}}', // label of the 2FA QR code
+    'twoFactorAuthEnforced' => ${TWO_FACTOR_AUTH_ENFORCED_PHP},
+    'terms' => '${TERMS_URL:-}',
+
     'email' => [
         'name' => 'MONARC',
-        'from' => 'info@monarc.lu',
+        'from' => '${EMAIL_FROM:-info@monarc.lu}',
     ],
 ${SMTP_CONFIG_BLOCK}
 
@@ -262,21 +314,40 @@ ${SMTP_CONFIG_BLOCK}
     ],
 
     'import' => [
-        'uploadFolder' => '$appdir/data/import/files',
+        'uploadFolder' => \$appdir . '/data/import/files',
         'isBackgroundProcessActive' => false,
     ],
 ];
 EOF
 
-    # Update and build frontend and run DB migrations
-    echo -e "${YELLOW}Building frontend and running DB migrations...${NC}"
-    ./scripts/update-all.sh
+    if [ "$IS_DEV_ENV" -eq 1 ]; then
+        # Update and build frontend and run DB migrations
+        echo -e "${YELLOW}Building frontend and running DB migrations...${NC}"
+        ./scripts/update-all.sh
+    else
+        # Same database steps as update-all.sh, without rebuilding what the image already contains
+        echo -e "${YELLOW}Running DB migrations...${NC}"
+        # monarc_common belongs to the BackOffice when USE_BO_COMMON is enabled (as in ansible-ubuntu):
+        # the FrontOffice only migrates it in standalone mode.
+        if [ "$USE_BO_COMMON_ENABLED" -eq 0 ]; then
+            php ./vendor/robmorgan/phinx/bin/phinx migrate -c ./module/Monarc/Core/migrations/phinx.php
+        fi
+        php ./vendor/robmorgan/phinx/bin/phinx migrate -c ./module/Monarc/FrontOffice/migrations/phinx.php
+        ./scripts/update_config_variables.sh
+        mkdir -p ./data/cache && touch ./data/cache/upgrade && chmod 777 ./data/cache/upgrade
+    fi
+    release_common_lock
 
-    # Seed database with initial user
-    echo -e "${YELLOW}Creating initial user and client...${NC}"
-    if ! php ./vendor/robmorgan/phinx/bin/phinx seed:run -c ./module/Monarc/FrontOffice/migrations/phinx.php; then
-        echo -e "${YELLOW}Initial user/client seed failed. update-all completed successfully, so initialization will continue.${NC}"
-        echo -e "${YELLOW}If needed, rerun the seed manually after startup.${NC}"
+    # Seed database with initial user. Disabled (MONARC_SEED_ADMIN=0) for the entities created from the
+    # BackOffice: their first user is inserted by the entity deployment service, as ansible-ubuntu does.
+    if is_true "${MONARC_SEED_ADMIN:-1}"; then
+        echo -e "${YELLOW}Creating initial user and client...${NC}"
+        if ! php ./vendor/robmorgan/phinx/bin/phinx seed:run -c ./module/Monarc/FrontOffice/migrations/phinx.php; then
+            echo -e "${YELLOW}Initial user/client seed failed. update-all completed successfully, so initialization will continue.${NC}"
+            echo -e "${YELLOW}If needed, rerun the seed manually after startup.${NC}"
+        fi
+    else
+        echo -e "${YELLOW}MONARC_SEED_ADMIN disabled: the first user is created by the BackOffice deployment.${NC}"
     fi
 
     # Set permissions
@@ -292,6 +363,25 @@ EOF
 else
     echo -e "${GREEN}Application already initialized, starting services...${NC}"
 fi
+
+# PHP limits, applied at every start (defaults = official values of the ansible-ubuntu deployment)
+cat > /etc/php/8.1/apache2/conf.d/99-monarc-limits.ini <<EOF
+memory_limit = ${PHP_MEMORY_LIMIT:-4096M}
+max_execution_time = ${PHP_MAX_EXECUTION_TIME:-520}
+upload_max_filesize = ${PHP_UPLOAD_MAX_FILESIZE:-200M}
+post_max_size = ${PHP_POST_MAX_SIZE:-200M}
+EOF
+
+# Apache prefork sized for one entity per container (Ubuntu defaults allow 150 workers per container)
+cat > /etc/apache2/conf-enabled/zz-monarc-prefork.conf <<EOF
+<IfModule mpm_prefork_module>
+    StartServers            ${APACHE_START_SERVERS:-2}
+    MinSpareServers         ${APACHE_MIN_SPARE_SERVERS:-1}
+    MaxSpareServers         ${APACHE_MAX_SPARE_SERVERS:-3}
+    MaxRequestWorkers       ${APACHE_MAX_REQUEST_WORKERS:-20}
+    MaxConnectionsPerChild  ${APACHE_MAX_CONNECTIONS_PER_CHILD:-500}
+</IfModule>
+EOF
 
 # Execute the main command
 exec apachectl -D FOREGROUND
