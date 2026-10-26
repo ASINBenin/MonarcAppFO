@@ -200,6 +200,16 @@ if [ ! -f "/var/www/html/monarc/.docker-initialized" ]; then
     ],"
     fi
 
+    # Emit boApi (access to the BackOffice campaigns API) only if both the BO address and the entity token are set.
+    BO_API_CONFIG_BLOCK=""
+    if [ -n "${BO_API_BASE_URL:-}" ] && [ -n "${BO_API_TOKEN:-}" ]; then
+        BO_API_CONFIG_BLOCK="
+    'boApi' => [
+        'baseUrl' => '${BO_API_BASE_URL}',
+        'token'   => '${BO_API_TOKEN}',
+    ],"
+    fi
+
     # Generate local config (always override to match container DB)
     echo -e "${YELLOW}Creating local configuration...${NC}"
     cat > config/autoload/local.php <<EOF
@@ -272,6 +282,7 @@ ${SMTP_CONFIG_BLOCK}
         'baseUrl' => '${STATS_API_BASE_URL:-http://stats-service:5005}',
         'apiKey' => '${STATS_API_KEY:-}',
     ],
+${BO_API_CONFIG_BLOCK}
 
     'deliverable' => [
         'pdfConverterBinary' => '${PDF_CONVERTER_BINARY:-/usr/bin/soffice}',
