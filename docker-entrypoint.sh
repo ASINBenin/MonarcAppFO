@@ -215,6 +215,17 @@ if [ ! -f "/var/www/html/monarc/.docker-initialized" ]; then
     ],"
     fi
 
+    # The TrustedX login is offered only when the server is configured; signing also needs the SSO encryption key.
+    TRUSTEDX_ACTIVE_PHP=false
+    if [ -n "${TRUSTEDX_URL:-}" ] && [ -n "${TRUSTEDX_CLIENT_ID:-}" ] && [ -n "${TRUSTEDX_CLIENT_SECRET:-}" ]; then
+        TRUSTEDX_ACTIVE_PHP=true
+        if [ "${#MONARC_SSO_ENCRYPTION_KEY}" -lt 32 ]; then
+            echo -e "${RED}MONARC_SSO_ENCRYPTION_KEY must have at least 32 characters: TrustedX signing will fail.${NC}"
+        fi
+    else
+        echo -e "${YELLOW}TRUSTEDX_URL, TRUSTEDX_CLIENT_ID or TRUSTEDX_CLIENT_SECRET is empty: TrustedX login and signing are disabled.${NC}"
+    fi
+
     # Generate local config (always override to match container DB)
     echo -e "${YELLOW}Creating local configuration...${NC}"
     cat > config/autoload/local.php <<EOF
@@ -296,7 +307,7 @@ ${BO_API_CONFIG_BLOCK}
     'sso_providers' => [
         'trustedx_pki' => [
             'name'                  => 'Identité Numérique PKI (TrustedX)',
-            'is_active'             => true,
+            'is_active'             => ${TRUSTEDX_ACTIVE_PHP},
             'type'                  => 'oauth2',
             'base_url'              => '${TRUSTEDX_URL}',
             'authorize_url'         => '${TRUSTEDX_URL}/trustedx-authserver/oauth/main-as',
