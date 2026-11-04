@@ -1,6 +1,21 @@
 MONARC Changelog
 ================
 
+## 2.14.2 (2026-09-10)
+
+### Enhancement
+
+- [Highlighting asset search results](https://github.com/monarc-project/MonarcAppFO/issues/623)
+
+### Fix
+
+- [Import rename assets to "<asset_name> - Imp. #1" when multiple asset have the same name](https://github.com/monarc-project/MonarcAppFO/issues/620)
+- [[FrontOffice] Operational risk recommendations display issue](https://github.com/monarc-project/MonarcAppFO/issues/628)
+- [Problems with "Synthesis of assets" and "Risks management organisation"](https://github.com/monarc-project/MonarcAppFO/issues/622)
+- [Buggy calendar in risk treatment](https://github.com/monarc-project/MonarcAppFO/issues/624)
+- [MFA OTP input field incorrectly uses autocomplete="new-password" instead of autocomplete="one-time-code"](https://github.com/monarc-project/MonarcAppFO/issues/610)
+
+
 ## 2.14.1 (2026-08-17)
 
 ### Enhancement
