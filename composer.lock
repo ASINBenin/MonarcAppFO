@@ -5272,12 +5272,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/ASINBenin/zm-core.git",
-                "reference": "a03c8aeadb900d5a8ae9872ad257dd9ac8c1e623"
+                "reference": "dc39d66e16d68cba217a8909ed139fa5d094f8d0"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/ASINBenin/zm-core/zipball/a03c8aeadb900d5a8ae9872ad257dd9ac8c1e623",
-                "reference": "a03c8aeadb900d5a8ae9872ad257dd9ac8c1e623",
+                "url": "https://api.github.com/repos/ASINBenin/zm-core/zipball/dc39d66e16d68cba217a8909ed139fa5d094f8d0",
+                "reference": "dc39d66e16d68cba217a8909ed139fa5d094f8d0",
                 "shasum": ""
             },
             "require": {
@@ -5363,7 +5363,7 @@
             "support": {
                 "source": "https://github.com/ASINBenin/zm-core/tree/master-asin"
             },
-            "time": "2026-09-16T08:10:33+00:00"
+            "time": "2026-09-17T14:59:07+00:00"
         },
         {
             "name": "monarc/frontoffice",
@@ -5473,12 +5473,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/ASINBenin/zm-sign.git",
-                "reference": "98e3bca063ffbb148ec2557c2a51ff3f26123455"
+                "reference": "ffc2f2b0e6512d59735a5679b5367d97592fafd9"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/ASINBenin/zm-sign/zipball/98e3bca063ffbb148ec2557c2a51ff3f26123455",
-                "reference": "98e3bca063ffbb148ec2557c2a51ff3f26123455",
+                "url": "https://api.github.com/repos/ASINBenin/zm-sign/zipball/ffc2f2b0e6512d59735a5679b5367d97592fafd9",
+                "reference": "ffc2f2b0e6512d59735a5679b5367d97592fafd9",
                 "shasum": ""
             },
             "type": "library",
@@ -5492,10 +5492,10 @@
             ],
             "description": "Electronic signature module for MONARC",
             "support": {
-                "source": "https://github.com/ASINBenin/zm-sign/tree/dev-dani",
+                "source": "https://github.com/ASINBenin/zm-sign/tree/master-asin",
                 "issues": "https://github.com/ASINBenin/zm-sign/issues"
             },
-            "time": "2026-09-13T13:25:11+00:00"
+            "time": "2026-09-17T14:59:17+00:00"
         },
         {
             "name": "nikic/php-parser",
