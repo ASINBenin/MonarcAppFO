@@ -183,6 +183,12 @@ if [ ! -f "/var/www/html/monarc/.docker-initialized" ]; then
         echo "session.cookie_path = ${PATH_PREFIX}" > /etc/php/8.1/apache2/conf.d/session-path.ini
     fi
 
+    # Public address of the entity, for the links of the emails: the daily tasks have no request to read it from.
+    HTTPS_PORT_SUFFIX=""
+    if [ "${HTTPS_PORT:-443}" != "443" ]; then
+        HTTPS_PORT_SUFFIX=":${HTTPS_PORT}"
+    fi
+
     # Emit smtpOptions only if SMTP_HOST is set (empty array still passes !empty()).
     SMTP_CONFIG_BLOCK=""
     if [ -n "${SMTP_HOST:-}" ]; then
@@ -279,6 +285,7 @@ return [
 
     // Per-entity settings, as in the official ansible-ubuntu client configuration
     'instanceName' => '${INSTANCE_NAME:-${DBNAME_CLI}}', // label of the 2FA QR code
+    'publicHost' => 'https://${DOMAIN_FO:-localhost}${HTTPS_PORT_SUFFIX}${PATH_PREFIX:-}',
     'twoFactorAuthEnforced' => ${TWO_FACTOR_AUTH_ENFORCED_PHP},
     'terms' => '${TERMS_URL:-}',
 
