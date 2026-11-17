@@ -329,6 +329,12 @@ ${BO_API_CONFIG_BLOCK}
             'scope'                 => 'urn:gob:basic:profile urn:safelayer:eidas:sign:process:document',
             'acr_values'            => 'urn:gob:authentication:flow:password',
             'identifier_claim'      => 'npi',
+            // Bouton de la page de connexion : icône Material ou image img/sso/<nom>.svg|png, couleurs #rrggbb
+            'display'               => [
+                'icon'       => 'verified_user',
+                'background' => '#003366',
+                'color'      => '#ffffff',
+            ],
         ],
     ],
 
