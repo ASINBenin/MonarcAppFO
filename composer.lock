@@ -5272,12 +5272,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/ASINBenin/zm-core.git",
-                "reference": "42d8cce9ace365f6bd8bcf2bea595ddb6731b06e"
+                "reference": "42a0f0ff1282b8f1f2215d0e1aa58f20e7140a6e"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/ASINBenin/zm-core/zipball/42d8cce9ace365f6bd8bcf2bea595ddb6731b06e",
-                "reference": "42d8cce9ace365f6bd8bcf2bea595ddb6731b06e",
+                "url": "https://api.github.com/repos/ASINBenin/zm-core/zipball/42a0f0ff1282b8f1f2215d0e1aa58f20e7140a6e",
+                "reference": "42a0f0ff1282b8f1f2215d0e1aa58f20e7140a6e",
                 "shasum": ""
             },
             "require": {
@@ -5363,7 +5363,7 @@
             "support": {
                 "source": "https://github.com/ASINBenin/zm-core/tree/dev-dani"
             },
-            "time": "2026-11-09T21:22:13+00:00"
+            "time": "2026-11-17T20:06:33+00:00"
         },
         {
             "name": "monarc/frontoffice",
@@ -5371,12 +5371,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/ASINBenin/zm-client.git",
-                "reference": "45cdda12d0af165480e37cc393b6e354bfcaa666"
+                "reference": "199fdb1198c6c72f3d717c4d5a8accb322d05d76"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/ASINBenin/zm-client/zipball/45cdda12d0af165480e37cc393b6e354bfcaa666",
-                "reference": "45cdda12d0af165480e37cc393b6e354bfcaa666",
+                "url": "https://api.github.com/repos/ASINBenin/zm-client/zipball/199fdb1198c6c72f3d717c4d5a8accb322d05d76",
+                "reference": "199fdb1198c6c72f3d717c4d5a8accb322d05d76",
                 "shasum": ""
             },
             "require": {
@@ -5465,7 +5465,7 @@
             "support": {
                 "source": "https://github.com/ASINBenin/zm-client/tree/dev-dani"
             },
-            "time": "2026-11-09T21:22:16+00:00"
+            "time": "2026-11-17T20:06:33+00:00"
         },
         {
             "name": "monarc/sign",
@@ -5473,12 +5473,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/ASINBenin/zm-sign.git",
-                "reference": "b5e235151adf8e8283592bc87699060b150e7089"
+                "reference": "58fcbeda958cf693f870b6bd346669a1292dbfef"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/ASINBenin/zm-sign/zipball/b5e235151adf8e8283592bc87699060b150e7089",
-                "reference": "b5e235151adf8e8283592bc87699060b150e7089",
+                "url": "https://api.github.com/repos/ASINBenin/zm-sign/zipball/58fcbeda958cf693f870b6bd346669a1292dbfef",
+                "reference": "58fcbeda958cf693f870b6bd346669a1292dbfef",
                 "shasum": ""
             },
             "type": "library",
@@ -5495,7 +5495,7 @@
                 "source": "https://github.com/ASINBenin/zm-sign/tree/dev-dani",
                 "issues": "https://github.com/ASINBenin/zm-sign/issues"
             },
-            "time": "2026-11-09T21:22:15+00:00"
+            "time": "2026-11-20T20:27:06+00:00"
         },
         {
             "name": "nikic/php-parser",
