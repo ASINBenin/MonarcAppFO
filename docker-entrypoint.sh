@@ -382,7 +382,8 @@ ${BO_API_CONFIG_BLOCK}
         'failedLoginAttempts' => 3,
         'params' => [
             'name' => 'MonarcCaptcha',
-            'font' => \$appdir . '/data/fonts/arial.ttf',
+            // System font: data/ is the entity volume and is not part of the image
+            'font' => '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf',
             'fontSize' => 30,
             'height' => 60,
             'wordLen' => 6,

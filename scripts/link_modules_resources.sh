@@ -19,7 +19,8 @@ cd "$BASE_DIR/public/css" && find ../../node_modules/ng_client/css -type f -name
 cd "$BASE_DIR/public/css/css" && find ../../../node_modules/ng_client/css -maxdepth 1 -type f \( -name "*.woff2" -o -name "*.woff" -o -name "*.ttf" -o -name "*.eot" -o -name "*.svg" \) -exec ln -sf {} . \; 2>/dev/null
 cd "$BASE_DIR/public/img" && find ../../node_modules/ng_client/img -type f -name "*" -exec ln -sf {} . \; 2>/dev/null
 # angular-common-libs.css (flag-icons) references "../flags/<set>/<code>.svg" relative to itself.
-ln -sfn "$BASE_DIR/node_modules/ng_client/node_modules/flag-icons/flags" "$BASE_DIR/public/flags"
+# Relative link: the CI builds in another folder than the image's /var/www/html/monarc.
+ln -sfn "../node_modules/ng_client/node_modules/flag-icons/flags" "$BASE_DIR/public/flags"
 cd "$BASE_DIR/public/js" && find ../../node_modules/ng_client/po -type f -name "translations.js" -exec ln -sf {} . \; 2>/dev/null
 
 echo "Linking ng_sign resources"
