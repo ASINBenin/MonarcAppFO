@@ -1,5 +1,5 @@
 # Commits of the ng modules built into the image (ASINBenin repositories).
 # Do not edit by hand: run scripts/update-modules.sh, then commit this file with composer.lock.
 ng_anr=8659743167f571dab458f7108896d7480a6688f2
-ng_client=40ec3da3a00dfef157dc11a31564dc3e78eada53
+ng_client=e2b74f812207a2e31bba1a2a5e65265d18afa715
 ng_sign=a284872554b944b8155407104ae248113b86bf42

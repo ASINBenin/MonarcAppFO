@@ -5272,12 +5272,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/ASINBenin/zm-core.git",
-                "reference": "42a0f0ff1282b8f1f2215d0e1aa58f20e7140a6e"
+                "reference": "b039bc8bd10ce4973c9e874f930e4224f7678e28"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/ASINBenin/zm-core/zipball/42a0f0ff1282b8f1f2215d0e1aa58f20e7140a6e",
-                "reference": "42a0f0ff1282b8f1f2215d0e1aa58f20e7140a6e",
+                "url": "https://api.github.com/repos/ASINBenin/zm-core/zipball/b039bc8bd10ce4973c9e874f930e4224f7678e28",
+                "reference": "b039bc8bd10ce4973c9e874f930e4224f7678e28",
                 "shasum": ""
             },
             "require": {
@@ -5363,7 +5363,7 @@
             "support": {
                 "source": "https://github.com/ASINBenin/zm-core/tree/dev-dani"
             },
-            "time": "2026-11-17T20:06:33+00:00"
+            "time": "2026-11-22T12:28:47+00:00"
         },
         {
             "name": "monarc/frontoffice",

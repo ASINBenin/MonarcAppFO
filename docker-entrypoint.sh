@@ -357,6 +357,10 @@ ${BO_API_CONFIG_BLOCK}
             'token_url'        => '${KEYCLOAK_INTERNAL_REALM_URL}/protocol/openid-connect/token',
             'userinfo_url'     => '${KEYCLOAK_INTERNAL_REALM_URL}/protocol/openid-connect/userinfo',
             'jwks_url'         => '${KEYCLOAK_INTERNAL_REALM_URL}/protocol/openid-connect/certs',
+            // ASIN requirements: PKCE, ID token issuer check, Keycloak logout together with MONARC
+            'pkce'             => true,
+            'issuer'           => '${KEYCLOAK_REALM_URL}',
+            'end_session_url'  => '${KEYCLOAK_REALM_URL}/protocol/openid-connect/logout',
             'client_id'        => '${KEYCLOAK_CLIENT_ID:-}',
             'client_secret'    => '${KEYCLOAK_CLIENT_SECRET:-}',
             'scope'            => 'openid profile email',
